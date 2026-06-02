@@ -30,6 +30,7 @@
     "eslint-plugin-vue": "^10.9.1",
     "globals": "^17.6.0",
     "npm-run-all2": "^8.0.4",
+    "sharp": "^0.34.5",
     "typescript": "~6.0.0",
     "typescript-eslint": "^8.60.1",
     "vite": "^8.0.8",

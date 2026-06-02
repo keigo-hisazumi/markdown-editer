@@ -2,10 +2,6 @@
   <title id="title">Markdown Editor アイコン</title>
   <desc id="desc">Markdown 文書、リアルタイムプレビュー、編集ペンを組み合わせたアイコン</desc>
   <defs>
-    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#667eea" />
-      <stop offset="1" stop-color="#764ba2" />
-    </linearGradient>
     <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#ffffff" />
       <stop offset="1" stop-color="#eef2ff" />
@@ -15,7 +11,7 @@
     </filter>
   </defs>
 
-  <rect width="512" height="512" rx="112" fill="url(#background)" />
+  <rect width="512" height="512" rx="112" fill="#667eea" />
 
   <g opacity="0.18" fill="none" stroke="#ffffff" stroke-width="16" stroke-linecap="round">
     <path d="M74 150h124" />

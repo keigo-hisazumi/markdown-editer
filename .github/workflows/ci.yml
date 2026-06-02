@@ -9,7 +9,7 @@ on:
     types: [opened, synchronize, reopened]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.event.number || github.ref }}
   cancel-in-progress: true
 
 permissions:

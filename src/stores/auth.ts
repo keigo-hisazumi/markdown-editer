@@ -37,11 +37,13 @@ export const useAuthStore = defineStore('auth', () => {
   })
 
   async function login(email: string, password: string): Promise<void> {
-    await signInWithEmailAndPassword(auth, email, password)
+    const credential = await signInWithEmailAndPassword(auth, email, password)
+    user.value = { id: credential.user.uid, email: credential.user.email ?? '' }
   }
 
   async function signup(email: string, password: string): Promise<void> {
-    await createUserWithEmailAndPassword(auth, email, password)
+    const credential = await createUserWithEmailAndPassword(auth, email, password)
+    user.value = { id: credential.user.uid, email: credential.user.email ?? '' }
   }
 
   async function logout(): Promise<void> {

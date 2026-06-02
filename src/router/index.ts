@@ -24,8 +24,10 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const authStore = useAuthStore()
+  // Firebase Auth の初期化完了を待ってからガード判定する
+  await authStore.authReady
   if (to.meta.requiresAuth && !authStore.isLoggedIn) {
     return { name: 'login' }
   }

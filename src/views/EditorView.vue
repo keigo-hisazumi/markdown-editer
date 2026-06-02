@@ -71,8 +71,8 @@ function markDirty() {
   isDirty.value = true
 }
 
-function saveArticle() {
-  articlesStore.save(id, title.value, content.value)
+async function saveArticle() {
+  await articlesStore.save(id, title.value, content.value)
   isDirty.value = false
 }
 

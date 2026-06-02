@@ -66,7 +66,7 @@ function handleLogout() {
 }
 
 function previewText(content: string): string {
-  return content.replace(/[#*`>_\[\]]/g, '').slice(0, 80).trim()
+  return content.replace(/[#*`>_[\]]/g, '').slice(0, 80).trim()
 }
 
 function formatDate(iso: string): string {

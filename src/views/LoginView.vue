@@ -68,7 +68,7 @@ function handleLogin() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #667eea;
   padding: 1rem;
 }
 
@@ -134,7 +134,7 @@ function handleLogin() {
 
 .btn-primary {
   padding: 0.875rem;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: #667eea;
   color: white;
   border: none;
   border-radius: 8px;

@@ -57,7 +57,7 @@ jobs:
       - name: 依存関係のインストール
         run: npm ci
       - name: test プレースホルダー
-        run: echo "TODO: test コマンドを設定してください"
+        run: echo "TODO - test コマンドを設定してください"
 
   build:
     name: Build

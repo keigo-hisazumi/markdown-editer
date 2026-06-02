@@ -1,0 +1,1 @@
+{"name":"Markdown Editor","short_name":"MDEditor","description":"Markdown形式で記事を編集するエディター","start_url":"/","display":"standalone","background_color":"#ffffff","theme_color":"#667eea","lang":"en","scope":"/","icons":[{"src":"/icons/icon-192x192.png","sizes":"192x192","type":"image/png"},{"src":"/icons/icon-512x512.png","sizes":"512x512","type":"image/png"}]}

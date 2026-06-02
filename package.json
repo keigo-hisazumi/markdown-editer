@@ -13,6 +13,7 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "firebase": "^12.14.0",
     "marked": "^18.0.4",
     "pinia": "^3.0.4",
     "vite-plugin-pwa": "^1.3.0",

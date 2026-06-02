@@ -1,33 +1,52 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  type User as FirebaseUser,
+} from 'firebase/auth'
+import { auth } from '@/firebase'
 
 export interface User {
   id: string
   email: string
-  name: string
 }
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
-
   const isLoggedIn = computed(() => user.value !== null)
 
-  function login(email: string, password: string): boolean {
-    // モック: 固定の認証情報でログイン
-    if (email === 'demo@example.com' && password === 'password') {
-      user.value = {
-        id: '1',
-        email: 'demo@example.com',
-        name: 'デモユーザー',
-      }
-      return true
-    }
-    return false
+  // Firebase Auth の初期化完了を待つ Promise
+  const authReady = new Promise<void>((resolve) => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+      user.value = firebaseUser
+        ? { id: firebaseUser.uid, email: firebaseUser.email ?? '' }
+        : null
+      unsubscribe()
+      resolve()
+    })
+  })
+
+  // ログイン後もリアルタイムで状態を同期
+  onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+    user.value = firebaseUser
+      ? { id: firebaseUser.uid, email: firebaseUser.email ?? '' }
+      : null
+  })
+
+  async function login(email: string, password: string): Promise<void> {
+    await signInWithEmailAndPassword(auth, email, password)
   }
 
-  function logout() {
-    user.value = null
+  async function signup(email: string, password: string): Promise<void> {
+    await createUserWithEmailAndPassword(auth, email, password)
   }
 
-  return { user, isLoggedIn, login, logout }
+  async function logout(): Promise<void> {
+    await signOut(auth)
+  }
+
+  return { user, isLoggedIn, authReady, login, signup, logout }
 })

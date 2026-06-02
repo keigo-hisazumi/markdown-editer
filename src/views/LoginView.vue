@@ -4,14 +4,14 @@
       <h1 class="app-title">📝 Markdown Editor</h1>
       <p class="app-subtitle">記事を書こう</p>
 
-      <form @submit.prevent="handleLogin" class="login-form">
+      <form @submit.prevent="handleSubmit" class="login-form">
         <div class="form-group">
           <label for="email">メールアドレス</label>
           <input
             id="email"
             v-model="email"
             type="email"
-            placeholder="demo@example.com"
+            placeholder="example@example.com"
             required
             autocomplete="email"
           />
@@ -23,7 +23,7 @@
             id="password"
             v-model="password"
             type="password"
-            placeholder="password"
+            placeholder="6文字以上"
             required
             autocomplete="current-password"
           />
@@ -31,10 +31,14 @@
 
         <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
 
-        <button type="submit" class="btn-primary">ログイン</button>
+        <button type="submit" class="btn-primary" :disabled="loading">
+          {{ loading ? '処理中...' : isSignup ? 'アカウント作成' : 'ログイン' }}
+        </button>
       </form>
 
-      <p class="demo-hint">デモ: demo@example.com / password</p>
+      <button class="btn-toggle" @click="isSignup = !isSignup">
+        {{ isSignup ? 'すでにアカウントをお持ちの方はこちら' : 'アカウントを新規作成する' }}
+      </button>
     </div>
   </div>
 </template>
@@ -50,14 +54,32 @@ const authStore = useAuthStore()
 const email = ref('')
 const password = ref('')
 const errorMsg = ref('')
+const loading = ref(false)
+const isSignup = ref(false)
 
-function handleLogin() {
+async function handleSubmit() {
   errorMsg.value = ''
-  const ok = authStore.login(email.value, password.value)
-  if (ok) {
+  loading.value = true
+  try {
+    if (isSignup.value) {
+      await authStore.signup(email.value, password.value)
+    } else {
+      await authStore.login(email.value, password.value)
+    }
     router.push('/articles')
-  } else {
-    errorMsg.value = 'メールアドレスまたはパスワードが正しくありません'
+  } catch (e: unknown) {
+    const code = (e as { code?: string }).code ?? ''
+    if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+      errorMsg.value = 'メールアドレスまたはパスワードが正しくありません'
+    } else if (code === 'auth/email-already-in-use') {
+      errorMsg.value = 'このメールアドレスはすでに使用されています'
+    } else if (code === 'auth/weak-password') {
+      errorMsg.value = 'パスワードは6文字以上で入力してください'
+    } else {
+      errorMsg.value = 'エラーが発生しました。もう一度お試しください'
+    }
+  } finally {
+    loading.value = false
   }
 }
 </script>
@@ -144,14 +166,25 @@ function handleLogin() {
   transition: opacity 0.2s;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   opacity: 0.9;
 }
 
-.demo-hint {
-  text-align: center;
-  color: #9ca3af;
-  font-size: 0.8rem;
-  margin: 1rem 0 0;
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-toggle {
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  color: #667eea;
+  font-size: 0.875rem;
+  cursor: pointer;
+  text-decoration: underline;
 }
 </style>

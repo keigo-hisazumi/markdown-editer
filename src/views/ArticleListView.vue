@@ -37,6 +37,7 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useArticlesStore } from '@/stores/articles'
@@ -45,23 +46,27 @@ const router = useRouter()
 const authStore = useAuthStore()
 const articlesStore = useArticlesStore()
 
+onMounted(() => {
+  articlesStore.fetchAll()
+})
+
 function openArticle(id: string) {
   router.push(`/articles/${id}`)
 }
 
-function createArticle() {
-  const article = articlesStore.create()
+async function createArticle() {
+  const article = await articlesStore.create()
   router.push(`/articles/${article.id}`)
 }
 
-function deleteArticle(id: string) {
+async function deleteArticle(id: string) {
   if (confirm('この記事を削除しますか？')) {
-    articlesStore.remove(id)
+    await articlesStore.remove(id)
   }
 }
 
-function handleLogout() {
-  authStore.logout()
+async function handleLogout() {
+  await authStore.logout()
   router.push('/')
 }
 

@@ -41,7 +41,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
       </button>
-      <h1>記事一覧</h1>
+      <h1>Markdown Editer</h1>
       <button class="btn-new" @click="createArticle" aria-label="新規作成">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
@@ -146,7 +146,7 @@ function formatDate(iso: string): string {
 .page-header {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  align-items: end;
+  align-items: center;
   padding: env(safe-area-inset-top) 1rem 0;
   height: calc(56px + env(safe-area-inset-top));
   padding-bottom: 0;
@@ -158,7 +158,7 @@ function formatDate(iso: string): string {
 }
 
 .page-header > * {
-  margin-bottom: 8px;
+  margin-bottom: 0;
 }
 
 .page-header h1 {

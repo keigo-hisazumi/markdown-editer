@@ -200,13 +200,12 @@ onBeforeUnmount(() => {
   font-size: 1.4rem;
   font-weight: 700;
   border: none;
-  border-bottom: 1px solid #e5e7eb;
   outline: none;
   color: #1f2937;
   padding: 0.75rem 1.5rem;
   padding-left: calc(1.5rem + env(safe-area-inset-left));
   padding-right: calc(1.5rem + env(safe-area-inset-right));
-  background: #fff;
+  background: #fafafa;
   flex-shrink: 0;
   box-sizing: border-box;
 }

@@ -6,8 +6,20 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 const base = process.env.VITE_BASE_PATH ?? '/'
 
+const buildDate = new Date().toLocaleString('ja-JP', {
+  timeZone: 'Asia/Tokyo',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+})
+
 export default defineConfig({
   base,
+  define: {
+    __BUILD_DATE__: JSON.stringify(buildDate),
+  },
   plugins: [
     vue(),
     VitePWA({

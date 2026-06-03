@@ -29,7 +29,7 @@
           </button>
         </div>
         <div class="drawer-footer">
-          <p class="drawer-app-date">アプリ更新日時<br>{{ APP_UPDATED_AT }}</p>
+          <p class="drawer-app-date">アプリ更新日時<br>{{ APP_UPDATED_AT }}<br>{{ envLabel }}環境</p>
         </div>
       </aside>
     </Transition>
@@ -84,7 +84,10 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useArticlesStore } from '@/stores/articles'
 
-const APP_UPDATED_AT = '2026年06月02日 22:55'
+declare const __BUILD_DATE__: string
+const APP_UPDATED_AT = __BUILD_DATE__
+const APP_ENV = (import.meta.env.VITE_APP_ENV as string | undefined) ?? '開発'
+const envLabel = APP_ENV === 'production' ? '本番' : APP_ENV === 'preview' ? 'プレビュー' : APP_ENV
 
 const router = useRouter()
 const authStore = useAuthStore()

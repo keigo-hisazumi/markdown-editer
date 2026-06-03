@@ -45,6 +45,7 @@ jobs:
       - name: PR ブランチ用ベースパスでビルド
         env:
           VITE_BASE_PATH: /${{ github.event.repository.name }}/pr-${{ github.event.number }}/
+          VITE_APP_ENV: preview
         run: npm run build
 
       - name: gh-pages への PR プレビューのデプロイ

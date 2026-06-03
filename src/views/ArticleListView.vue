@@ -84,7 +84,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useArticlesStore } from '@/stores/articles'
 
-const APP_UPDATED_AT = '2026年06月02日'
+const APP_UPDATED_AT = '2026年06月02日 22:55'
 
 const router = useRouter()
 const authStore = useAuthStore()

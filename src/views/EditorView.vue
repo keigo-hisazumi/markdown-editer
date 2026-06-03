@@ -31,29 +31,32 @@
     </header>
 
     <main class="editor-body">
-      <input
-        v-model="title"
-        class="title-input"
-        placeholder="記事タイトル"
-        @input="markDirty"
-      />
-      <div v-if="!isPreview" class="editor-pane">
-        <textarea
-          v-model="content"
-          class="markdown-input"
-          placeholder="Markdown で書いてください..."
+      <div class="scroll-container">
+        <input
+          v-model="title"
+          class="title-input"
+          placeholder="記事タイトル"
           @input="markDirty"
-          spellcheck="false"
         />
-      </div>
+        <div v-if="!isPreview" class="editor-pane">
+          <textarea
+            ref="textareaRef"
+            v-model="content"
+            class="markdown-input"
+            placeholder="Markdown で書いてください..."
+            @input="onContentInput"
+            spellcheck="false"
+          />
+        </div>
 
-      <div v-else class="preview-pane markdown-body" v-html="renderedContent" />
+        <div v-else class="preview-pane markdown-body" v-html="renderedContent" />
+      </div>
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount, onMounted, onUnmounted } from 'vue'
+import { ref, computed, nextTick, onBeforeUnmount, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { marked } from 'marked'
 import { useArticlesStore } from '@/stores/articles'
@@ -74,11 +77,24 @@ const content = ref(article?.content ?? '')
 const isPreview = ref(false)
 const isDirty = ref(false)
 const menuOpen = ref(false)
+const textareaRef = ref<HTMLTextAreaElement | null>(null)
 
 const renderedContent = computed(() => marked(content.value))
 
+function autoResize() {
+  const el = textareaRef.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = el.scrollHeight + 'px'
+}
+
 function markDirty() {
   isDirty.value = true
+}
+
+function onContentInput() {
+  markDirty()
+  autoResize()
 }
 
 async function saveArticle() {
@@ -114,7 +130,10 @@ function closeMenu() {
   if (menuOpen.value) menuOpen.value = false
 }
 
-onMounted(() => document.addEventListener('click', closeMenu))
+onMounted(() => {
+  document.addEventListener('click', closeMenu)
+  nextTick(autoResize)
+})
 onUnmounted(() => document.removeEventListener('click', closeMenu))
 
 // ページ離脱前に自動保存
@@ -283,20 +302,28 @@ onBeforeUnmount(() => {
   flex: 1;
   overflow: hidden;
   display: flex;
-  flex-direction: column;
   min-height: 0;
+}
+
+.scroll-container {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .editor-pane {
   flex: 1;
   display: flex;
-  min-height: 0;
+  flex-direction: column;
 }
 
 .markdown-input {
-  flex: 1;
+  width: 100%;
+  min-height: 60vh;
   padding: 1.5rem;
-  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
   padding-left: calc(1.5rem + env(safe-area-inset-left));
   padding-right: calc(1.5rem + env(safe-area-inset-right));
   border: none;
@@ -307,18 +334,14 @@ onBeforeUnmount(() => {
   line-height: 1.7;
   color: #374151;
   background: #fafafa;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .preview-pane {
-  flex: 1;
   padding: 1.5rem;
-  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
   padding-left: calc(1.5rem + env(safe-area-inset-left));
   padding-right: calc(1.5rem + env(safe-area-inset-right));
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
   max-width: 800px;
   margin: 0 auto;
   width: 100%;

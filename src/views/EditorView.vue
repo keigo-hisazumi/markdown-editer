@@ -4,13 +4,9 @@
       <button class="btn-back" @click="router.push('/articles')" title="一覧に戻る">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
-      <input
-        v-model="title"
-        class="title-input"
-        placeholder="記事タイトル"
-        @input="markDirty"
-      />
-      <span v-if="!isDirty" class="saved-label">保存済み</span>
+      <span class="flex-spacer" />
+      <span v-if="isDirty" class="editing-label">編集中</span>
+      <span v-else class="saved-label">保存済み</span>
       <div class="menu-wrapper">
         <button class="btn-menu" @click.stop="menuOpen = !menuOpen" title="メニュー">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
@@ -35,6 +31,12 @@
     </header>
 
     <main class="editor-body">
+      <input
+        v-model="title"
+        class="title-input"
+        placeholder="記事タイトル"
+        @input="markDirty"
+      />
       <div v-if="!isPreview" class="editor-pane">
         <textarea
           v-model="content"
@@ -128,6 +130,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   background: #fff;
 }
 
@@ -136,11 +139,19 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
+  padding-top: calc(0.75rem + env(safe-area-inset-top));
+  padding-left: calc(1rem + env(safe-area-inset-left));
+  padding-right: calc(1rem + env(safe-area-inset-right));
   border-bottom: 1px solid #e5e7eb;
   background: white;
   position: sticky;
   top: 0;
   z-index: 10;
+  flex-shrink: 0;
+}
+
+.flex-spacer {
+  flex: 1;
 }
 
 .btn-back {
@@ -165,13 +176,20 @@ onBeforeUnmount(() => {
 }
 
 .title-input {
-  flex: 1;
-  font-size: 1.1rem;
-  font-weight: 600;
+  display: block;
+  width: 100%;
+  font-size: 1.4rem;
+  font-weight: 700;
   border: none;
+  border-bottom: 1px solid #e5e7eb;
   outline: none;
   color: #1f2937;
-  min-width: 0;
+  padding: 0.75rem 1.5rem;
+  padding-left: calc(1.5rem + env(safe-area-inset-left));
+  padding-right: calc(1.5rem + env(safe-area-inset-right));
+  background: #fff;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .title-input::placeholder {
@@ -181,6 +199,12 @@ onBeforeUnmount(() => {
 .saved-label {
   font-size: 0.8rem;
   color: #10b981;
+  flex-shrink: 0;
+}
+
+.editing-label {
+  font-size: 0.8rem;
+  color: #f59e0b;
   flex-shrink: 0;
 }
 
@@ -259,16 +283,22 @@ onBeforeUnmount(() => {
   flex: 1;
   overflow: hidden;
   display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .editor-pane {
   flex: 1;
   display: flex;
+  min-height: 0;
 }
 
 .markdown-input {
   flex: 1;
   padding: 1.5rem;
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  padding-left: calc(1.5rem + env(safe-area-inset-left));
+  padding-right: calc(1.5rem + env(safe-area-inset-right));
   border: none;
   outline: none;
   resize: none;
@@ -277,15 +307,22 @@ onBeforeUnmount(() => {
   line-height: 1.7;
   color: #374151;
   background: #fafafa;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .preview-pane {
   flex: 1;
   padding: 1.5rem;
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  padding-left: calc(1.5rem + env(safe-area-inset-left));
+  padding-right: calc(1.5rem + env(safe-area-inset-right));
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   max-width: 800px;
   margin: 0 auto;
   width: 100%;
+  box-sizing: border-box;
 }
 </style>
 

@@ -273,7 +273,7 @@ onBeforeUnmount(() => {
   outline: none;
   resize: none;
   font-family: 'Courier New', Courier, monospace;
-  font-size: 0.95rem;
+  font-size: 1rem;
   line-height: 1.7;
   color: #374151;
   background: #fafafa;

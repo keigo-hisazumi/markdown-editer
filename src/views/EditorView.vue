@@ -108,7 +108,7 @@ async function onMenuDelete() {
   router.push('/articles')
 }
 
-function closeMenu(e: MouseEvent) {
+function closeMenu() {
   if (menuOpen.value) menuOpen.value = false
 }
 

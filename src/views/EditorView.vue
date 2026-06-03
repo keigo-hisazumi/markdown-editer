@@ -4,13 +4,9 @@
       <button class="btn-back" @click="router.push('/articles')" title="一覧に戻る">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
-      <input
-        v-model="title"
-        class="title-input"
-        placeholder="記事タイトル"
-        @input="markDirty"
-      />
-      <span v-if="!isDirty" class="saved-label">保存済み</span>
+      <span class="flex-spacer" />
+      <span v-if="isDirty" class="editing-label">編集中</span>
+      <span v-else class="saved-label">保存済み</span>
       <div class="menu-wrapper">
         <button class="btn-menu" @click.stop="menuOpen = !menuOpen" title="メニュー">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
@@ -35,23 +31,32 @@
     </header>
 
     <main class="editor-body">
-      <div v-if="!isPreview" class="editor-pane">
-        <textarea
-          v-model="content"
-          class="markdown-input"
-          placeholder="Markdown で書いてください..."
+      <div class="scroll-container">
+        <input
+          v-model="title"
+          class="title-input"
+          placeholder="記事タイトル"
           @input="markDirty"
-          spellcheck="false"
         />
-      </div>
+        <div v-if="!isPreview" class="editor-pane">
+          <textarea
+            ref="textareaRef"
+            v-model="content"
+            class="markdown-input"
+            placeholder="Markdown で書いてください..."
+            @input="onContentInput"
+            spellcheck="false"
+          />
+        </div>
 
-      <div v-else class="preview-pane markdown-body" v-html="renderedContent" />
+        <div v-else class="preview-pane markdown-body" v-html="renderedContent" />
+      </div>
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount, onMounted, onUnmounted } from 'vue'
+import { ref, computed, nextTick, onBeforeUnmount, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { marked } from 'marked'
 import { useArticlesStore } from '@/stores/articles'
@@ -72,11 +77,24 @@ const content = ref(article?.content ?? '')
 const isPreview = ref(false)
 const isDirty = ref(false)
 const menuOpen = ref(false)
+const textareaRef = ref<HTMLTextAreaElement | null>(null)
 
 const renderedContent = computed(() => marked(content.value))
 
+function autoResize() {
+  const el = textareaRef.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = el.scrollHeight + 'px'
+}
+
 function markDirty() {
   isDirty.value = true
+}
+
+function onContentInput() {
+  markDirty()
+  autoResize()
 }
 
 async function saveArticle() {
@@ -112,7 +130,10 @@ function closeMenu() {
   if (menuOpen.value) menuOpen.value = false
 }
 
-onMounted(() => document.addEventListener('click', closeMenu))
+onMounted(() => {
+  document.addEventListener('click', closeMenu)
+  nextTick(autoResize)
+})
 onUnmounted(() => document.removeEventListener('click', closeMenu))
 
 // ページ離脱前に自動保存
@@ -127,7 +148,8 @@ onBeforeUnmount(() => {
 .editor-page {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  position: fixed;
+  inset: 0;
   background: #fff;
 }
 
@@ -136,11 +158,17 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
+  padding-top: calc(0.75rem + env(safe-area-inset-top));
+  padding-left: calc(1rem + env(safe-area-inset-left));
+  padding-right: calc(1rem + env(safe-area-inset-right));
   border-bottom: 1px solid #e5e7eb;
   background: white;
-  position: sticky;
-  top: 0;
+  flex-shrink: 0;
   z-index: 10;
+}
+
+.flex-spacer {
+  flex: 1;
 }
 
 .btn-back {
@@ -165,13 +193,19 @@ onBeforeUnmount(() => {
 }
 
 .title-input {
-  flex: 1;
-  font-size: 1.1rem;
-  font-weight: 600;
+  display: block;
+  width: 100%;
+  font-size: 1.4rem;
+  font-weight: 700;
   border: none;
   outline: none;
   color: #1f2937;
-  min-width: 0;
+  padding: 0.75rem 1.5rem;
+  padding-left: calc(1.5rem + env(safe-area-inset-left));
+  padding-right: calc(1.5rem + env(safe-area-inset-right));
+  background: #fafafa;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .title-input::placeholder {
@@ -181,6 +215,12 @@ onBeforeUnmount(() => {
 .saved-label {
   font-size: 0.8rem;
   color: #10b981;
+  flex-shrink: 0;
+}
+
+.editing-label {
+  font-size: 0.8rem;
+  color: #f59e0b;
   flex-shrink: 0;
 }
 
@@ -259,16 +299,31 @@ onBeforeUnmount(() => {
   flex: 1;
   overflow: hidden;
   display: flex;
+  min-height: 0;
+}
+
+.scroll-container {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: #fafafa;
 }
 
 .editor-pane {
   flex: 1;
   display: flex;
+  flex-direction: column;
 }
 
 .markdown-input {
-  flex: 1;
+  width: 100%;
+  min-height: 60vh;
   padding: 1.5rem;
+  padding-left: calc(1.5rem + env(safe-area-inset-left));
+  padding-right: calc(1.5rem + env(safe-area-inset-right));
   border: none;
   outline: none;
   resize: none;
@@ -277,15 +332,18 @@ onBeforeUnmount(() => {
   line-height: 1.7;
   color: #374151;
   background: #fafafa;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .preview-pane {
-  flex: 1;
   padding: 1.5rem;
-  overflow-y: auto;
+  padding-left: calc(1.5rem + env(safe-area-inset-left));
+  padding-right: calc(1.5rem + env(safe-area-inset-right));
   max-width: 800px;
   margin: 0 auto;
   width: 100%;
+  box-sizing: border-box;
 }
 </style>
 

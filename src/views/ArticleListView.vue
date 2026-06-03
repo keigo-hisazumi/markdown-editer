@@ -138,6 +138,7 @@ function formatDate(iso: string): string {
 /* ===== ページ全体 ===== */
 .list-page {
   min-height: 100vh;
+  min-height: 100dvh;
   background: #f3f4f6;
 }
 
@@ -145,14 +146,19 @@ function formatDate(iso: string): string {
 .page-header {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  padding: 0 1rem;
-  height: 56px;
+  align-items: end;
+  padding: env(safe-area-inset-top) 1rem 0;
+  height: calc(56px + env(safe-area-inset-top));
+  padding-bottom: 0;
   background: white;
   border-bottom: 1px solid #e5e7eb;
   position: sticky;
   top: 0;
   z-index: 10;
+}
+
+.page-header > * {
+  margin-bottom: 8px;
 }
 
 .page-header h1 {
@@ -217,6 +223,7 @@ function formatDate(iso: string): string {
   top: 0;
   left: 0;
   height: 100vh;
+  height: 100dvh;
   width: 280px;
   background: white;
   z-index: 30;
@@ -226,7 +233,7 @@ function formatDate(iso: string): string {
 }
 
 .drawer-top {
-  padding: 2rem 1.5rem 1.5rem;
+  padding: max(2rem, calc(env(safe-area-inset-top) + 1rem)) 1.5rem 1.5rem;
   border-bottom: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
@@ -279,7 +286,7 @@ function formatDate(iso: string): string {
 }
 
 .drawer-footer {
-  padding: 1rem 1.5rem;
+  padding: 1rem 1.5rem max(1rem, env(safe-area-inset-bottom));
   border-top: 1px solid #e5e7eb;
 }
 
@@ -312,7 +319,7 @@ function formatDate(iso: string): string {
 
 /* ===== 記事一覧 ===== */
 .article-list {
-  padding: 1.5rem;
+  padding: 1.5rem 1.5rem calc(1.5rem + env(safe-area-inset-bottom));
   max-width: 800px;
   margin: 0 auto;
   display: flex;

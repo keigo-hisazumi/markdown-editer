@@ -18,18 +18,14 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const isLoggedIn = computed(() => user.value !== null)
 
-  // Firebase Auth の初期化完了を待つ Promise
-  const authReady = new Promise<void>((resolve) => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
-      user.value = firebaseUser
-        ? { id: firebaseUser.uid, email: firebaseUser.email ?? '' }
-        : null
-      unsubscribe()
-      resolve()
-    })
+  // Firebase Auth 初期化完了（localStorage 読み込み含む）を待つ Promise
+  const authReady = auth.authStateReady().then(() => {
+    user.value = auth.currentUser
+      ? { id: auth.currentUser.uid, email: auth.currentUser.email ?? '' }
+      : null
   })
 
-  // ログイン後もリアルタイムで状態を同期
+  // ログイン・ログアウト後もリアルタイムで状態を同期
   onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
     user.value = firebaseUser
       ? { id: firebaseUser.uid, email: firebaseUser.email ?? '' }

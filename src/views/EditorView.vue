@@ -150,6 +150,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   height: 100vh;
   height: 100dvh;
+  overflow: hidden;
   background: #fff;
 }
 
@@ -163,10 +164,8 @@ onBeforeUnmount(() => {
   padding-right: calc(1rem + env(safe-area-inset-right));
   border-bottom: 1px solid #e5e7eb;
   background: white;
-  position: sticky;
-  top: 0;
-  z-index: 10;
   flex-shrink: 0;
+  z-index: 10;
 }
 
 .flex-spacer {

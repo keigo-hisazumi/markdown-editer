@@ -311,6 +311,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   padding-bottom: env(safe-area-inset-bottom);
+  background: #fafafa;
 }
 
 .editor-pane {

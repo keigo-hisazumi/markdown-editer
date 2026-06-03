@@ -62,13 +62,6 @@
           <p class="article-preview">{{ previewText(article.content) }}</p>
           <time class="article-date">{{ formatDate(article.updatedAt) }}</time>
         </div>
-        <button
-          class="btn-delete"
-          @click.stop="deleteArticle(article.id)"
-          title="削除"
-        >
-          ✕
-        </button>
       </div>
 
       <div v-if="articlesStore.articles.length === 0" class="empty-state">
@@ -107,11 +100,6 @@ async function createArticle() {
   router.push(`/articles/${article.id}`)
 }
 
-async function deleteArticle(id: string) {
-  if (confirm('この記事を削除しますか？')) {
-    await articlesStore.remove(id)
-  }
-}
 
 async function handleLogout() {
   isDrawerOpen.value = false
@@ -373,26 +361,6 @@ function formatDate(iso: string): string {
   color: #9ca3af;
 }
 
-.btn-delete {
-  flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  background: transparent;
-  color: #d1d5db;
-  border: none;
-  border-radius: 50%;
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-delete:hover {
-  background: #fee2e2;
-  color: #ef4444;
-}
 
 .empty-state {
   text-align: center;

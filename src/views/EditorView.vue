@@ -12,7 +12,7 @@
       />
       <span v-if="!isDirty" class="saved-label">保存済み</span>
       <div class="menu-wrapper">
-        <button class="btn-menu" @click="menuOpen = !menuOpen" title="メニュー">
+        <button class="btn-menu" @click.stop="menuOpen = !menuOpen" title="メニュー">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
         </button>
         <div v-if="menuOpen" class="menu-dropdown" @click.stop>

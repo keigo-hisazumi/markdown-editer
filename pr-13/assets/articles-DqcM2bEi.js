@@ -1,4 +1,0 @@
-import{M as e,a as t,c as n,f as r,i,l as a,n as o,o as s,r as c,s as l,t as u}from"./index-CtlIu2Io.js";var d=r(`articles`,()=>{let r=e([]);function d(){let e=u();if(!e.user)throw Error(`未ログイン`);return n(o,`users`,e.user.id,`articles`)}async function f(){r.value=(await i(s(d(),t(`updatedAt`,`desc`)))).docs.map(e=>({id:e.id,...e.data()}))}function p(e){return r.value.find(t=>t.id===e)}async function m(e,t,n){let i=new Date().toISOString();await l(a(d(),e),{title:t,content:n,updatedAt:i});let o=r.value.find(t=>t.id===e);o&&(o.title=t,o.content=n,o.updatedAt=i)}async function h(){let e={id:String(Date.now()),title:`新しい記事`,content:`# 新しい記事
-
-ここに内容を書いてください。
-`,updatedAt:new Date().toISOString()};return await l(a(d(),e.id),{title:e.title,content:e.content,updatedAt:e.updatedAt}),r.value.unshift(e),e}async function g(e){await c(a(d(),e)),r.value=r.value.filter(t=>t.id!==e)}return{articles:r,fetchAll:f,getById:p,save:m,create:h,remove:g}});export{d as t};

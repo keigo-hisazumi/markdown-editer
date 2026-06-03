@@ -187,17 +187,17 @@ function formatDate(iso: string): string {
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: #667eea;
-  color: white;
+  background: transparent;
+  color: #667eea;
   border: none;
-  border-radius: 50%;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
+  transition: color 0.2s, background 0.2s;
 }
 
 .btn-new:hover {
-  background: #5a6fd6;
-  transform: scale(1.05);
+  color: #5a6fd6;
+  background: #f0f1ff;
 }
 
 /* ===== オーバーレイ ===== */

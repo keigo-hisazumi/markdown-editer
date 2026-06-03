@@ -1,29 +1,36 @@
 <template>
   <div class="editor-page">
     <header class="editor-header">
-      <button class="btn-back" @click="router.push('/articles')">← 一覧</button>
+      <button class="btn-back" @click="router.push('/articles')" title="一覧に戻る">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+      </button>
       <input
         v-model="title"
         class="title-input"
         placeholder="記事タイトル"
         @input="markDirty"
       />
-      <div class="header-actions">
-        <button
-          v-if="isDirty"
-          class="btn-save"
-          @click="saveArticle"
-        >
-          保存
+      <span v-if="!isDirty" class="saved-label">保存済み</span>
+      <div class="menu-wrapper">
+        <button class="btn-menu" @click="menuOpen = !menuOpen" title="メニュー">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
         </button>
-        <span v-else class="saved-label">保存済み</span>
-        <button
-          class="btn-toggle"
-          @click="toggleMode"
-          :title="isPreview ? '編集に戻る' : 'プレビュー'"
-        >
-          {{ isPreview ? '✏️ 編集' : '👁 プレビュー' }}
-        </button>
+        <div v-if="menuOpen" class="menu-dropdown" @click.stop>
+          <button class="menu-item" @click="onMenuSave">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            保存
+          </button>
+          <button class="menu-item" @click="onMenuTogglePreview">
+            <svg v-if="!isPreview" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            {{ isPreview ? '編集に戻る' : 'プレビュー' }}
+          </button>
+          <hr class="menu-divider" />
+          <button class="menu-item menu-item--danger" @click="onMenuDelete">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            削除
+          </button>
+        </div>
       </div>
     </header>
 
@@ -44,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount } from 'vue'
+import { ref, computed, onBeforeUnmount, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { marked } from 'marked'
 import { useArticlesStore } from '@/stores/articles'
@@ -64,6 +71,7 @@ const title = ref(article?.title ?? '')
 const content = ref(article?.content ?? '')
 const isPreview = ref(false)
 const isDirty = ref(false)
+const menuOpen = ref(false)
 
 const renderedContent = computed(() => marked(content.value))
 
@@ -82,6 +90,30 @@ function toggleMode() {
   }
   isPreview.value = !isPreview.value
 }
+
+function onMenuSave() {
+  saveArticle()
+  menuOpen.value = false
+}
+
+function onMenuTogglePreview() {
+  toggleMode()
+  menuOpen.value = false
+}
+
+async function onMenuDelete() {
+  if (!confirm('この記事を削除しますか？')) return
+  menuOpen.value = false
+  await articlesStore.remove(id)
+  router.push('/articles')
+}
+
+function closeMenu(e: MouseEvent) {
+  if (menuOpen.value) menuOpen.value = false
+}
+
+onMounted(() => document.addEventListener('click', closeMenu))
+onUnmounted(() => document.removeEventListener('click', closeMenu))
 
 // ページ離脱前に自動保存
 onBeforeUnmount(() => {
@@ -113,20 +145,23 @@ onBeforeUnmount(() => {
 
 .btn-back {
   flex-shrink: 0;
-  padding: 0.4rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
   background: transparent;
   color: #6b7280;
-  border: 1.5px solid #d1d5db;
+  border: none;
   border-radius: 6px;
-  font-size: 0.875rem;
   cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s;
+  transition: color 0.2s, background 0.2s;
 }
 
 .btn-back:hover {
-  border-color: #9ca3af;
   color: #374151;
+  background: #f3f4f6;
 }
 
 .title-input {
@@ -143,49 +178,81 @@ onBeforeUnmount(() => {
   color: #d1d5db;
 }
 
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-shrink: 0;
-}
-
-.btn-save {
-  padding: 0.4rem 1rem;
-  background: #667eea;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn-save:hover {
-  background: #5a6fd6;
-}
-
 .saved-label {
   font-size: 0.8rem;
   color: #10b981;
-  padding: 0.4rem 0.5rem;
+  flex-shrink: 0;
 }
 
-.btn-toggle {
-  padding: 0.4rem 0.75rem;
+.menu-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.btn-menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
   background: transparent;
-  color: #374151;
-  border: 1.5px solid #d1d5db;
+  color: #6b7280;
+  border: none;
   border-radius: 6px;
-  font-size: 0.875rem;
   cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
+  transition: color 0.2s, background 0.2s;
 }
 
-.btn-toggle:hover {
-  border-color: #9ca3af;
+.btn-menu:hover {
+  color: #374151;
+  background: #f3f4f6;
+}
+
+.menu-dropdown {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  min-width: 140px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: transparent;
+  border: none;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.menu-item:hover {
+  background: #f3f4f6;
+}
+
+.menu-item--danger {
+  color: #ef4444;
+}
+
+.menu-item--danger:hover {
+  background: #fef2f2;
+}
+
+.menu-divider {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 0.25rem 0;
 }
 
 .editor-body {

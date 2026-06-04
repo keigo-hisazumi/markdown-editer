@@ -362,7 +362,7 @@ onBeforeUnmount(() => {
   font-weight: 700;
   margin-top: 1.5em;
   margin-bottom: 0.5em;
-  color: #1f2937;
+  color: #ef4444;
 }
 
 .markdown-body h1 { font-size: 1.75rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem; }

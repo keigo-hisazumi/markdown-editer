@@ -8,18 +8,19 @@ const router = createRouter({
       path: '/',
       name: 'login',
       component: () => import('@/views/LoginView.vue'),
+      meta: { depth: 0 },
     },
     {
       path: '/articles',
       name: 'articles',
       component: () => import('@/views/ArticleListView.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, depth: 1 },
     },
     {
       path: '/articles/:id',
       name: 'editor',
       component: () => import('@/views/EditorView.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, depth: 2 },
     },
   ],
 })

@@ -13,8 +13,13 @@ import { RouterView, useRouter } from 'vue-router'
 const transitionName = ref('none')
 
 const router = useRouter()
+let appReady = false
+router.isReady().then(() => {
+  appReady = true
+})
+
 router.afterEach((to, from) => {
-  if (from.name === null) {
+  if (!appReady) {
     transitionName.value = 'none'
     return
   }

@@ -14,6 +14,10 @@ const transitionName = ref('none')
 
 const router = useRouter()
 router.afterEach((to, from) => {
+  if (from.name === null) {
+    transitionName.value = 'none'
+    return
+  }
   const toDepth = (to.meta.depth as number) ?? 0
   const fromDepth = (from.meta.depth as number) ?? 0
   transitionName.value = toDepth > fromDepth ? 'slide-forward' : 'slide-backward'

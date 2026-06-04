@@ -50,22 +50,24 @@
     </header>
 
     <!-- 記事一覧 -->
-    <main class="article-list">
-      <div
-        v-for="article in articlesStore.articles"
-        :key="article.id"
-        class="article-card"
-        @click="openArticle(article.id)"
-      >
-        <div class="card-body">
-          <h2 class="article-title">{{ article.title }}</h2>
-          <p class="article-preview">{{ previewText(article.content) }}</p>
-          <time class="article-date">{{ formatDate(article.updatedAt) }}</time>
+    <main class="list-body">
+      <div class="article-list">
+        <div
+          v-for="article in articlesStore.articles"
+          :key="article.id"
+          class="article-card"
+          @click="openArticle(article.id)"
+        >
+          <div class="card-body">
+            <h2 class="article-title">{{ article.title }}</h2>
+            <p class="article-preview">{{ previewText(article.content) }}</p>
+            <time class="article-date">{{ formatDate(article.updatedAt) }}</time>
+          </div>
         </div>
-      </div>
 
-      <div v-if="articlesStore.articles.length === 0" class="empty-state">
-        記事がありません。右上の「＋」で始めましょう。
+        <div v-if="articlesStore.articles.length === 0" class="empty-state">
+          記事がありません。右上の「＋」で始めましょう。
+        </div>
       </div>
     </main>
   </div>
@@ -125,9 +127,11 @@ function formatDate(iso: string): string {
 <style scoped>
 /* ===== ページ全体 ===== */
 .list-page {
-  min-height: 100vh;
-  min-height: 100dvh;
+  position: fixed;
+  inset: 0;
   background: #f3f4f6;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ===== ヘッダー ===== */
@@ -140,8 +144,7 @@ function formatDate(iso: string): string {
   padding-bottom: 0;
   background: white;
   border-bottom: 1px solid #e5e7eb;
-  position: sticky;
-  top: 0;
+  flex-shrink: 0;
   z-index: 10;
 }
 
@@ -303,6 +306,14 @@ function formatDate(iso: string): string {
 .slide-left-enter-from,
 .slide-left-leave-to {
   transform: translateX(-100%);
+}
+
+/* ===== スクロールコンテナ ===== */
+.list-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
 }
 
 /* ===== 記事一覧 ===== */

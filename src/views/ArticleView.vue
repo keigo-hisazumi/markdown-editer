@@ -431,7 +431,11 @@ function formatDate(iso: string): string {
 
 /* 検索バー */
 .search-bar-wrap {
-  padding: 0.6rem 0.75rem;
+  height: 53px;
+  box-sizing: border-box;
+  padding: 0 0.75rem;
+  display: flex;
+  align-items: center;
   background: var(--app-bg);
   border-bottom: 1px solid var(--app-border);
   flex-shrink: 0;
@@ -439,6 +443,7 @@ function formatDate(iso: string): string {
 }
 
 .search-bar {
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -545,7 +550,6 @@ function formatDate(iso: string): string {
   border-bottom: 1px solid var(--app-header-border);
   flex-shrink: 0;
   transition: background 0.3s, border-color 0.3s;
-  box-shadow: 0 1px 4px var(--app-shadow);
 }
 
 .nav-spacer { flex: 1; }

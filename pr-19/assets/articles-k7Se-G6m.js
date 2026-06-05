@@ -1,0 +1,4 @@
+import{P as e,a as t,c as n,i as r,l as i,n as a,o,p as s,r as c,s as l,u}from"./index-8y-IqPq8.js";var d=s(`articles`,()=>{let s=e([]);function d(){let e=a();if(!e.user)throw Error(`未ログイン`);return i(c,`users`,e.user.id,`articles`)}async function f(){s.value=(await t(l(d(),o(`updatedAt`,`desc`)))).docs.map(e=>({id:e.id,...e.data()}))}function p(e){return s.value.find(t=>t.id===e)}async function m(e,t,r){let i=new Date().toISOString();await n(u(d(),e),{title:t,content:r,updatedAt:i});let a=s.value.find(t=>t.id===e);a&&(a.title=t,a.content=r,a.updatedAt=i)}async function h(){let e={id:String(Date.now()),title:`新しい記事`,content:`# 新しい記事
+
+ここに内容を書いてください。
+`,updatedAt:new Date().toISOString()};return await n(u(d(),e.id),{title:e.title,content:e.content,updatedAt:e.updatedAt}),s.value.unshift(e),e}async function g(e){await r(u(d(),e)),s.value=s.value.filter(t=>t.id!==e)}return{articles:s,fetchAll:f,getById:p,save:m,create:h,remove:g}});export{d as t};

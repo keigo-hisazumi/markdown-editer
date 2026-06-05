@@ -358,7 +358,8 @@ function formatDate(iso: string): string {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem 0.75rem;
+  height: 53px;
+  padding: 0 0.75rem;
   background: var(--app-header-bg);
   border-bottom: 1px solid var(--app-header-border);
   flex-shrink: 0;
@@ -539,7 +540,8 @@ function formatDate(iso: string): string {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem 0.75rem;
+  height: 53px;
+  padding: 0 0.75rem;
   background: var(--app-header-bg);
   border-bottom: 1px solid var(--app-header-border);
   flex-shrink: 0;

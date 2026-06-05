@@ -30,18 +30,6 @@ router.afterEach((to, from) => {
 </script>
 
 <style>
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-
 /* 前進（一覧→編集）: 編集画面が右からスライドイン */
 .slide-forward-enter-active,
 .slide-forward-leave-active,
@@ -70,7 +58,6 @@ body {
   transform: translateX(-20%);
 }
 
-/* 後退（編集→一覧）: 編集画面が右にスライドアウト */
 .slide-backward-leave-active {
   position: fixed;
   inset: 0;

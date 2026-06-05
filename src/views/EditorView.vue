@@ -147,8 +147,10 @@ onBeforeUnmount(() => {
 .editor-page {
   display: flex;
   flex-direction: column;
-  position: fixed;
-  inset: 0;
+  height: 100vh;
+  overflow: hidden;
+  max-width: 600px;
+  margin: 0 auto;
   background: var(--app-bg);
   transition: background 0.3s;
 }
@@ -159,8 +161,6 @@ onBeforeUnmount(() => {
   gap: 0.75rem;
   padding: 0.75rem 1rem;
   padding-top: calc(0.75rem + env(safe-area-inset-top));
-  padding-left: calc(1rem + env(safe-area-inset-left));
-  padding-right: calc(1rem + env(safe-area-inset-right));
   border-bottom: 1px solid var(--app-header-border);
   background: var(--app-header-bg);
   flex-shrink: 0;
@@ -203,8 +203,6 @@ onBeforeUnmount(() => {
   outline: none;
   color: var(--app-text);
   padding: 0.75rem 1.5rem;
-  padding-left: calc(1.5rem + env(safe-area-inset-left));
-  padding-right: calc(1.5rem + env(safe-area-inset-right));
   background: var(--app-bg-soft);
   flex-shrink: 0;
   box-sizing: border-box;
@@ -329,8 +327,6 @@ onBeforeUnmount(() => {
   width: 100%;
   min-height: 60vh;
   padding: 1.5rem;
-  padding-left: calc(1.5rem + env(safe-area-inset-left));
-  padding-right: calc(1.5rem + env(safe-area-inset-right));
   border: none;
   outline: none;
   resize: none;
@@ -346,10 +342,6 @@ onBeforeUnmount(() => {
 
 .preview-pane {
   padding: 1.5rem;
-  padding-left: calc(1.5rem + env(safe-area-inset-left));
-  padding-right: calc(1.5rem + env(safe-area-inset-right));
-  max-width: 800px;
-  margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
 }

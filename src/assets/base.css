@@ -183,7 +183,7 @@ html.theme-transitioning *::after {
 body {
   min-height: 100vh;
   color: var(--app-text);
-  background: var(--app-bg);
+  background: var(--app-bg-soft);
   transition:
     color 0.3s,
     background-color 0.3s;

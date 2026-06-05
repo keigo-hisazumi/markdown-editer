@@ -8,32 +8,28 @@ const router = createRouter({
       path: '/',
       name: 'login',
       component: () => import('@/views/LoginView.vue'),
-      meta: { depth: 0 },
     },
     {
       path: '/articles',
       name: 'articles',
-      component: () => import('@/views/ArticleListView.vue'),
-      meta: { requiresAuth: true, depth: 1 },
+      component: () => import('@/views/ArticleView.vue'),
+      meta: { requiresAuth: true },
     },
     {
       path: '/articles/:id',
       name: 'editor',
-      component: () => import('@/views/EditorView.vue'),
-      meta: { requiresAuth: true, depth: 2 },
+      component: () => import('@/views/ArticleView.vue'),
+      meta: { requiresAuth: true },
     },
   ],
 })
 
 router.beforeEach(async (to) => {
   const authStore = useAuthStore()
-  // Firebase Auth の初期化完了（localStorage 復元含む）を待ってからガード判定する
   await authStore.authReady
   if (to.meta.requiresAuth && !authStore.isLoggedIn) {
     return { name: 'login' }
   }
-  // ログイン済みでログインページにアクセスした場合は記事一覧にリダイレクト
-  // （PWA の start_url が "/" のため、起動時に毎回ここを通る）
   if (to.name === 'login' && authStore.isLoggedIn) {
     return { name: 'articles' }
   }

@@ -136,7 +136,6 @@ onMounted(() => {
 })
 onUnmounted(() => document.removeEventListener('click', closeMenu))
 
-// ページ離脱前に自動保存
 onBeforeUnmount(() => {
   if (isDirty.value) {
     articlesStore.save(id, title.value, content.value)
@@ -148,9 +147,12 @@ onBeforeUnmount(() => {
 .editor-page {
   display: flex;
   flex-direction: column;
-  position: fixed;
-  inset: 0;
-  background: #fff;
+  height: 100vh;
+  overflow: hidden;
+  max-width: 600px;
+  margin: 0 auto;
+  background: var(--app-bg);
+  transition: background 0.3s;
 }
 
 .editor-header {
@@ -159,12 +161,12 @@ onBeforeUnmount(() => {
   gap: 0.75rem;
   padding: 0.75rem 1rem;
   padding-top: calc(0.75rem + env(safe-area-inset-top));
-  padding-left: calc(1rem + env(safe-area-inset-left));
-  padding-right: calc(1rem + env(safe-area-inset-right));
-  border-bottom: 1px solid #e5e7eb;
-  background: white;
+  border-bottom: 1px solid var(--app-header-border);
+  background: var(--app-header-bg);
   flex-shrink: 0;
   z-index: 10;
+  transition: background 0.3s, border-color 0.3s;
+  box-shadow: 0 1px 4px var(--app-shadow);
 }
 
 .flex-spacer {
@@ -180,7 +182,7 @@ onBeforeUnmount(() => {
   height: 2rem;
   padding: 0;
   background: transparent;
-  color: #6b7280;
+  color: var(--app-text-secondary);
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -188,8 +190,8 @@ onBeforeUnmount(() => {
 }
 
 .btn-back:hover {
-  color: #374151;
-  background: #f3f4f6;
+  color: var(--app-text);
+  background: var(--app-menu-hover);
 }
 
 .title-input {
@@ -199,17 +201,17 @@ onBeforeUnmount(() => {
   font-weight: 700;
   border: none;
   outline: none;
-  color: #1f2937;
+  color: var(--app-text);
   padding: 0.75rem 1.5rem;
-  padding-left: calc(1.5rem + env(safe-area-inset-left));
-  padding-right: calc(1.5rem + env(safe-area-inset-right));
-  background: #fafafa;
+  background: var(--app-bg-soft);
   flex-shrink: 0;
   box-sizing: border-box;
+  transition: background 0.3s, color 0.3s;
+  font-family: inherit;
 }
 
 .title-input::placeholder {
-  color: #d1d5db;
+  color: var(--app-text-placeholder);
 }
 
 .saved-label {
@@ -237,7 +239,7 @@ onBeforeUnmount(() => {
   height: 2rem;
   padding: 0;
   background: transparent;
-  color: #6b7280;
+  color: var(--app-text-secondary);
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -245,8 +247,8 @@ onBeforeUnmount(() => {
 }
 
 .btn-menu:hover {
-  color: #374151;
-  background: #f3f4f6;
+  color: var(--app-text);
+  background: var(--app-menu-hover);
 }
 
 .menu-dropdown {
@@ -254,12 +256,13 @@ onBeforeUnmount(() => {
   top: calc(100% + 0.25rem);
   right: 0;
   min-width: 140px;
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--app-menu-bg);
+  border: 1px solid var(--app-border);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px var(--app-menu-shadow);
   z-index: 100;
   overflow: hidden;
+  transition: background 0.3s;
 }
 
 .menu-item {
@@ -271,27 +274,28 @@ onBeforeUnmount(() => {
   background: transparent;
   border: none;
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--app-text);
   cursor: pointer;
   text-align: left;
   transition: background 0.15s;
+  font-family: inherit;
 }
 
 .menu-item:hover {
-  background: #f3f4f6;
+  background: var(--app-menu-hover);
 }
 
 .menu-item--danger {
-  color: #ef4444;
+  color: var(--app-delete-hover-text);
 }
 
 .menu-item--danger:hover {
-  background: #fef2f2;
+  background: var(--app-delete-hover-bg);
 }
 
 .menu-divider {
   border: none;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--app-border);
   margin: 0.25rem 0;
 }
 
@@ -309,7 +313,8 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   padding-bottom: env(safe-area-inset-bottom);
-  background: #fafafa;
+  background: var(--app-bg-soft);
+  transition: background 0.3s;
 }
 
 .editor-pane {
@@ -322,26 +327,21 @@ onBeforeUnmount(() => {
   width: 100%;
   min-height: 60vh;
   padding: 1.5rem;
-  padding-left: calc(1.5rem + env(safe-area-inset-left));
-  padding-right: calc(1.5rem + env(safe-area-inset-right));
   border: none;
   outline: none;
   resize: none;
   font-family: 'Courier New', Courier, monospace;
   font-size: 1rem;
   line-height: 1.7;
-  color: #374151;
-  background: #fafafa;
+  color: var(--app-text);
+  background: var(--app-bg-soft);
   box-sizing: border-box;
   overflow: hidden;
+  transition: background 0.3s, color 0.3s;
 }
 
 .preview-pane {
   padding: 1.5rem;
-  padding-left: calc(1.5rem + env(safe-area-inset-left));
-  padding-right: calc(1.5rem + env(safe-area-inset-right));
-  max-width: 800px;
-  margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
 }
@@ -350,10 +350,10 @@ onBeforeUnmount(() => {
 <style>
 /* Markdown プレビュースタイル（グローバル） */
 .markdown-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: inherit;
   font-size: 1rem;
   line-height: 1.75;
-  color: #374151;
+  color: var(--app-text);
 }
 
 .markdown-body h1,
@@ -362,11 +362,11 @@ onBeforeUnmount(() => {
   font-weight: 700;
   margin-top: 1.5em;
   margin-bottom: 0.5em;
-  color: #1f2937;
+  color: var(--app-text);
 }
 
-.markdown-body h1 { font-size: 1.75rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem; }
-.markdown-body h2 { font-size: 1.35rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.3rem; }
+.markdown-body h1 { font-size: 1.75rem; border-bottom: 2px solid var(--app-border); padding-bottom: 0.5rem; }
+.markdown-body h2 { font-size: 1.35rem; border-bottom: 1px solid var(--app-border); padding-bottom: 0.3rem; }
 .markdown-body h3 { font-size: 1.1rem; }
 
 .markdown-body p { margin: 0.75em 0; }
@@ -380,7 +380,7 @@ onBeforeUnmount(() => {
 .markdown-body li { margin: 0.25em 0; }
 
 .markdown-body code {
-  background: #f3f4f6;
+  background: var(--app-bg-soft);
   padding: 0.15em 0.4em;
   border-radius: 4px;
   font-family: 'Courier New', Courier, monospace;
@@ -389,7 +389,8 @@ onBeforeUnmount(() => {
 }
 
 .markdown-body pre {
-  background: #1f2937;
+  background: var(--app-header-bg);
+  border: 1px solid var(--app-border);
   padding: 1rem;
   border-radius: 8px;
   overflow-x: auto;
@@ -398,16 +399,16 @@ onBeforeUnmount(() => {
 
 .markdown-body pre code {
   background: none;
-  color: #f9fafb;
+  color: var(--app-text);
   padding: 0;
 }
 
 .markdown-body blockquote {
-  border-left: 4px solid #667eea;
+  border-left: 4px solid var(--app-accent);
   margin: 1em 0;
   padding: 0.5rem 1rem;
-  background: #eff6ff;
-  color: #374151;
+  background: var(--app-active-bg);
+  color: var(--app-text-secondary);
 }
 
 .markdown-body table {
@@ -418,17 +419,17 @@ onBeforeUnmount(() => {
 
 .markdown-body th,
 .markdown-body td {
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--app-border);
   padding: 0.5rem 0.75rem;
 }
 
 .markdown-body th {
-  background: #f9fafb;
+  background: var(--app-bg-soft);
   font-weight: 600;
 }
 
 .markdown-body a {
-  color: #667eea;
+  color: var(--app-accent);
   text-decoration: none;
 }
 
@@ -438,5 +439,5 @@ onBeforeUnmount(() => {
 
 .markdown-body strong { font-weight: 700; }
 .markdown-body em { font-style: italic; }
-.markdown-body del { text-decoration: line-through; color: #6b7280; }
+.markdown-body del { text-decoration: line-through; color: var(--app-text-muted); }
 </style>

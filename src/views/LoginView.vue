@@ -90,17 +90,20 @@ async function handleSubmit() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #667eea;
+  background: var(--app-bg-soft);
   padding: 1rem;
+  transition: background 0.3s;
 }
 
 .login-card {
-  background: white;
+  background: var(--app-menu-bg);
   border-radius: 12px;
   padding: 2.5rem 2rem;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 20px 60px var(--app-menu-shadow);
+  border: 1px solid var(--app-border);
+  transition: background 0.3s, border-color 0.3s;
 }
 
 .app-title {
@@ -108,13 +111,15 @@ async function handleSubmit() {
   font-weight: 700;
   text-align: center;
   margin: 0 0 0.25rem;
-  color: #1a1a2e;
+  color: var(--app-text);
+  transition: color 0.3s;
 }
 
 .app-subtitle {
   text-align: center;
-  color: #666;
+  color: var(--app-text-secondary);
   margin: 0 0 2rem;
+  transition: color 0.3s;
 }
 
 .login-form {
@@ -132,20 +137,28 @@ async function handleSubmit() {
 .form-group label {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--app-text);
+  transition: color 0.3s;
 }
 
 .form-group input {
   padding: 0.75rem 1rem;
-  border: 1.5px solid #d1d5db;
+  border: 1.5px solid var(--app-border);
   border-radius: 8px;
   font-size: 1rem;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, background 0.3s, color 0.3s;
   outline: none;
+  background: var(--app-input-bg);
+  color: var(--app-text);
+  font-family: inherit;
 }
 
 .form-group input:focus {
-  border-color: #667eea;
+  border-color: var(--app-accent);
+}
+
+.form-group input::placeholder {
+  color: var(--app-text-placeholder);
 }
 
 .error-msg {
@@ -156,7 +169,7 @@ async function handleSubmit() {
 
 .btn-primary {
   padding: 0.875rem;
-  background: #667eea;
+  background: var(--app-accent);
   color: white;
   border: none;
   border-radius: 8px;
@@ -164,6 +177,7 @@ async function handleSubmit() {
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s;
+  font-family: inherit;
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -182,9 +196,10 @@ async function handleSubmit() {
   padding: 0.5rem;
   background: transparent;
   border: none;
-  color: #667eea;
+  color: var(--app-accent);
   font-size: 0.875rem;
   cursor: pointer;
   text-decoration: underline;
+  font-family: inherit;
 }
 </style>

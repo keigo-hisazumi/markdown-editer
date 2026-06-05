@@ -364,7 +364,6 @@ function formatDate(iso: string): string {
   border-bottom: 1px solid var(--app-header-border);
   flex-shrink: 0;
   transition: background 0.3s, border-color 0.3s;
-  box-shadow: 0 1px 4px var(--app-shadow);
 }
 
 .sidebar-title {
@@ -674,13 +673,14 @@ function formatDate(iso: string): string {
 .title-input {
   display: block;
   width: 100%;
+  height: 53px;
   font-size: 1.4rem;
   font-weight: 700;
   border: none;
   border-bottom: 1px solid var(--app-border);
   outline: none;
   color: var(--app-text);
-  padding: 0.75rem 1.5rem;
+  padding: 0 1.25rem;
   background: var(--app-bg-soft);
   flex-shrink: 0;
   box-sizing: border-box;

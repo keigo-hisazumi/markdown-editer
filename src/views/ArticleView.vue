@@ -670,7 +670,7 @@ function formatDate(iso: string): string {
   -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
-  background: var(--app-bg-soft);
+  background: var(--app-bg);
   transition: background 0.3s;
 }
 
@@ -685,7 +685,7 @@ function formatDate(iso: string): string {
   outline: none;
   color: var(--app-text);
   padding: 0 1.25rem;
-  background: var(--app-bg-soft);
+  background: var(--app-bg);
   flex-shrink: 0;
   box-sizing: border-box;
   transition: background 0.3s, color 0.3s, border-color 0.3s;
@@ -711,7 +711,7 @@ function formatDate(iso: string): string {
   font-size: 1rem;
   line-height: 1.7;
   color: var(--app-text);
-  background: var(--app-bg-soft);
+  background: var(--app-bg);
   box-sizing: border-box;
   overflow: hidden;
   transition: background 0.3s, color 0.3s;

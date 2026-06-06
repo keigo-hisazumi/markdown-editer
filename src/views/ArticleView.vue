@@ -54,43 +54,117 @@
           <span class="bar" /><span class="bar" /><span class="bar" />
         </button>
         <span class="sidebar-title">Markdown Editer</span>
-        <button class="btn-compose" @click="handleCreate" aria-label="新規作成">
+        <button v-if="sidebarTab === 'articles'" class="btn-compose" @click="handleCreate" aria-label="新規作成">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 20h9"/>
             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
           </svg>
         </button>
+        <div v-else style="width: 36px;" />
       </div>
 
-      <div class="search-bar-wrap">
-        <div class="search-bar">
-          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <input v-model="searchQuery" type="search" class="search-input" placeholder="記事を検索" />
-        </div>
-      </div>
-
-      <!-- 記事リスト -->
-      <div class="article-list">
-        <div v-if="filteredArticles.length === 0" class="empty-state">
-          <p>記事がありません</p>
-          <p class="empty-hint">右上のボタンで記事を追加しましょう</p>
-        </div>
-        <div
-          v-for="article in filteredArticles"
-          :key="article.id"
-          :class="['article-item', { active: selectedId === article.id }]"
-          @click="handleSelect(article.id)"
+      <!-- サイドバータブ -->
+      <div class="sidebar-tabs">
+        <button
+          :class="['sidebar-tab', { active: sidebarTab === 'articles' }]"
+          @click="sidebarTab = 'articles'"
         >
-          <div class="article-item-inner">
-            <h2 class="article-title">{{ article.title || '無題の記事' }}</h2>
-            <p class="article-preview">{{ previewText(article.content) }}</p>
-            <time class="article-date">{{ formatDate(article.updatedAt) }}</time>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          記事
+        </button>
+        <button
+          :class="['sidebar-tab', { active: sidebarTab === 'trash' }]"
+          @click="sidebarTab = 'trash'"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+          </svg>
+          ゴミ箱
+          <span v-if="articlesStore.trashedArticles.length > 0" class="trash-badge">
+            {{ articlesStore.trashedArticles.length }}
+          </span>
+        </button>
+      </div>
+
+      <!-- 記事タブ: 検索 & ステータスフィルター -->
+      <template v-if="sidebarTab === 'articles'">
+        <div class="search-bar-wrap">
+          <div class="search-bar">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input v-model="searchQuery" type="search" class="search-input" placeholder="記事を検索" />
           </div>
         </div>
-      </div>
+
+        <div class="status-filter">
+          <button
+            v-for="f in statusFilters"
+            :key="f.value"
+            :class="['status-filter-btn', { active: statusFilter === f.value }]"
+            @click="statusFilter = f.value"
+          >{{ f.label }}</button>
+        </div>
+
+        <!-- 記事リスト -->
+        <div class="article-list">
+          <div v-if="filteredArticles.length === 0" class="empty-state">
+            <p>記事がありません</p>
+            <p class="empty-hint">右上のボタンで記事を追加しましょう</p>
+          </div>
+          <div
+            v-for="article in filteredArticles"
+            :key="article.id"
+            :class="['article-item', { active: selectedId === article.id }]"
+            @click="handleSelect(article.id)"
+          >
+            <div class="article-item-inner">
+              <div class="article-item-header">
+                <h2 class="article-title">{{ article.title || '無題の記事' }}</h2>
+                <span :class="['status-badge', `status-badge--${article.status}`]">
+                  {{ article.status === 'published' ? '投稿済み' : '作成中' }}
+                </span>
+              </div>
+              <p class="article-preview">{{ previewText(article.content) }}</p>
+              <time class="article-date">{{ formatDate(article.updatedAt) }}</time>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- ゴミ箱タブ -->
+      <template v-else>
+        <div class="article-list">
+          <div v-if="articlesStore.trashedArticles.length === 0" class="empty-state">
+            <p>ゴミ箱は空です</p>
+          </div>
+          <div
+            v-for="article in articlesStore.trashedArticles"
+            :key="article.id"
+            class="article-item article-item--trash"
+          >
+            <div class="article-item-inner">
+              <h2 class="article-title">{{ article.title || '無題の記事' }}</h2>
+              <p class="article-preview">{{ previewText(article.content) }}</p>
+              <time class="article-date">削除日: {{ formatDate(article.deletedAt!) }}</time>
+              <div class="trash-actions">
+                <button class="trash-btn trash-btn--restore" @click="handleRestore(article.id)">
+                  復元
+                </button>
+                <button class="trash-btn trash-btn--delete" @click="handlePermanentDelete(article.id)">
+                  完全削除
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
     </div>
 
     <!-- メインエリア（エディタ） -->
@@ -138,13 +212,21 @@
                 保存
               </button>
               <div class="action-menu-divider" />
-              <button class="action-menu-item action-menu-delete" @click="onMenuDelete">
+              <button class="action-menu-item" @click="onMenuToggleStatus">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                {{ currentArticleStatus === 'published' ? '作成中に戻す' : '投稿済みにする' }}
+              </button>
+              <div class="action-menu-divider" />
+              <button class="action-menu-item action-menu-delete" @click="onMenuTrash">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="3 6 5 6 21 6"/>
                   <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
                   <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
                 </svg>
-                削除
+                ゴミ箱に移動
               </button>
             </div>
           </div>
@@ -191,6 +273,7 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted, onBeforeUnmount
 import { useRoute, useRouter } from 'vue-router'
 import { marked } from 'marked'
 import { useArticlesStore } from '@/stores/articles'
+import type { ArticleStatus } from '@/stores/articles'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 
@@ -209,15 +292,32 @@ const isDirty = ref(false)
 const isPreview = ref(false)
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const windowWidth = ref(window.innerWidth)
+const sidebarTab = ref<'articles' | 'trash'>('articles')
+const statusFilter = ref<'all' | ArticleStatus>('all')
+
+const statusFilters = [
+  { value: 'all' as const, label: 'すべて' },
+  { value: 'draft' as const, label: '作成中' },
+  { value: 'published' as const, label: '投稿済み' },
+]
 
 const isMobile = computed(() => windowWidth.value < 768)
 const selectedId = computed(() => route.params.id as string | undefined)
 const showEditor = computed(() => !!selectedId.value)
 
+const currentArticleStatus = computed(() => {
+  if (!selectedId.value) return 'draft'
+  return articlesStore.getById(selectedId.value)?.status ?? 'draft'
+})
+
 const filteredArticles = computed(() => {
+  let list = articlesStore.articles
+  if (statusFilter.value !== 'all') {
+    list = list.filter((a) => a.status === statusFilter.value)
+  }
   const q = searchQuery.value.trim().toLowerCase()
-  if (!q) return articlesStore.articles
-  return articlesStore.articles.filter(a =>
+  if (!q) return list
+  return list.filter((a) =>
     a.title.toLowerCase().includes(q) || a.content.toLowerCase().includes(q)
   )
 })
@@ -288,11 +388,28 @@ function onMenuSave() {
   menuOpen.value = false
 }
 
-async function onMenuDelete() {
-  if (!selectedId.value || !confirm('この記事を削除しますか？')) return
+async function onMenuToggleStatus() {
+  if (!selectedId.value) return
   menuOpen.value = false
-  await articlesStore.remove(selectedId.value)
+  const next: ArticleStatus = currentArticleStatus.value === 'published' ? 'draft' : 'published'
+  await articlesStore.updateStatus(selectedId.value, next)
+}
+
+async function onMenuTrash() {
+  if (!selectedId.value) return
+  menuOpen.value = false
+  if (isDirty.value) await saveArticle()
+  await articlesStore.trash(selectedId.value)
   router.push('/articles')
+}
+
+async function handleRestore(id: string) {
+  await articlesStore.restore(id)
+}
+
+async function handlePermanentDelete(id: string) {
+  if (!confirm('この記事を完全に削除しますか？この操作は取り消せません。')) return
+  await articlesStore.permanentDelete(id)
 }
 
 function handleSelect(id: string) {
@@ -429,6 +546,55 @@ function formatDate(iso: string): string {
 
 .btn-compose:hover { background: var(--app-menu-hover); }
 
+/* サイドバータブ */
+.sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--app-border);
+  background: var(--app-bg);
+  flex-shrink: 0;
+}
+
+.sidebar-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--app-text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.2s, border-color 0.2s;
+  position: relative;
+}
+
+.sidebar-tab.active {
+  color: var(--app-accent);
+  border-bottom-color: var(--app-accent);
+}
+
+.sidebar-tab:hover:not(.active) { color: var(--app-text-secondary); }
+
+.trash-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
 /* 検索バー */
 .search-bar-wrap {
   height: 53px;
@@ -468,6 +634,40 @@ function formatDate(iso: string): string {
 .search-input::placeholder { color: var(--app-text-muted); }
 .search-input::-webkit-search-cancel-button { -webkit-appearance: none; }
 
+/* ステータスフィルター */
+.status-filter {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--app-bg);
+  border-bottom: 1px solid var(--app-border);
+  flex-shrink: 0;
+}
+
+.status-filter-btn {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: transparent;
+  color: var(--app-text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.status-filter-btn.active {
+  background: var(--app-accent);
+  color: #fff;
+  border-color: var(--app-accent);
+}
+
+.status-filter-btn:hover:not(.active) {
+  background: var(--app-menu-hover);
+  color: var(--app-text);
+}
+
 /* 記事リスト */
 .article-list {
   flex: 1;
@@ -495,15 +695,24 @@ function formatDate(iso: string): string {
   -webkit-tap-highlight-color: transparent;
 }
 
+.article-item--trash { cursor: default; }
+
 .article-item:last-child { border-bottom: none; }
 
-.article-item:hover,
+.article-item:hover:not(.article-item--trash),
 .article-item.active { background: var(--app-active-bg); }
 
 .article-item-inner { padding: 0.85rem 1rem; }
 
+.article-item-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.2rem;
+}
+
 .article-title {
-  margin: 0 0 0.2rem;
+  margin: 0;
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--app-text);
@@ -511,6 +720,29 @@ function formatDate(iso: string): string {
   overflow: hidden;
   text-overflow: ellipsis;
   transition: color 0.3s;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ステータスバッジ */
+.status-badge {
+  flex-shrink: 0;
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 10px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.status-badge--draft {
+  background: rgba(245, 158, 11, 0.15);
+  color: #d97706;
+}
+
+.status-badge--published {
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
 }
 
 .article-preview {
@@ -529,6 +761,46 @@ function formatDate(iso: string): string {
   font-size: 0.72rem;
   color: var(--app-text-muted);
   transition: color 0.3s;
+}
+
+/* ゴミ箱アクションボタン */
+.trash-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.trash-btn {
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+
+.trash-btn--restore {
+  background: transparent;
+  border-color: var(--app-accent);
+  color: var(--app-accent);
+}
+
+.trash-btn--restore:hover {
+  background: var(--app-accent);
+  color: #fff;
+}
+
+.trash-btn--delete {
+  background: transparent;
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.trash-btn--delete:hover {
+  background: #ef4444;
+  color: #fff;
 }
 
 /* ===== メインエリア ===== */
@@ -608,7 +880,7 @@ function formatDate(iso: string): string {
   border-radius: 10px;
   box-shadow: 0 4px 16px var(--app-shadow);
   z-index: 100;
-  min-width: 140px;
+  min-width: 160px;
   overflow: hidden;
   transition: background 0.3s;
 }

@@ -1,26 +1,34 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import {
   collection,
   doc,
   getDocs,
   setDoc,
   deleteDoc,
+  updateDoc,
   query,
   orderBy,
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuthStore } from '@/stores/auth'
 
+export type ArticleStatus = 'draft' | 'published'
+
 export interface Article {
   id: string
   title: string
   content: string
   updatedAt: string
+  status: ArticleStatus
+  deletedAt: string | null
 }
 
 export const useArticlesStore = defineStore('articles', () => {
-  const articles = ref<Article[]>([])
+  const _all = ref<Article[]>([])
+
+  const articles = computed(() => _all.value.filter((a) => !a.deletedAt))
+  const trashedArticles = computed(() => _all.value.filter((a) => !!a.deletedAt))
 
   function articlesCol() {
     const authStore = useAuthStore()
@@ -31,17 +39,28 @@ export const useArticlesStore = defineStore('articles', () => {
   async function fetchAll(): Promise<void> {
     const q = query(articlesCol(), orderBy('updatedAt', 'desc'))
     const snap = await getDocs(q)
-    articles.value = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Article, 'id'>) }))
+    _all.value = snap.docs.map((d) => {
+      const data = d.data() as Omit<Article, 'id'>
+      return {
+        id: d.id,
+        status: data.status ?? 'draft',
+        deletedAt: data.deletedAt ?? null,
+        title: data.title,
+        content: data.content,
+        updatedAt: data.updatedAt,
+      }
+    })
   }
 
   function getById(id: string): Article | undefined {
-    return articles.value.find((a) => a.id === id)
+    return _all.value.find((a) => a.id === id)
   }
 
   async function save(id: string, title: string, content: string): Promise<void> {
     const updatedAt = new Date().toISOString()
-    await setDoc(doc(articlesCol(), id), { title, content, updatedAt })
-    const article = articles.value.find((a) => a.id === id)
+    const article = _all.value.find((a) => a.id === id)
+    const status = article?.status ?? 'draft'
+    await setDoc(doc(articlesCol(), id), { title, content, updatedAt, status, deletedAt: null })
     if (article) {
       article.title = title
       article.content = content
@@ -55,20 +74,54 @@ export const useArticlesStore = defineStore('articles', () => {
       title: '新しい記事',
       content: '# 新しい記事\n\nここに内容を書いてください。\n',
       updatedAt: new Date().toISOString(),
+      status: 'draft',
+      deletedAt: null,
     }
     await setDoc(doc(articlesCol(), newArticle.id), {
       title: newArticle.title,
       content: newArticle.content,
       updatedAt: newArticle.updatedAt,
+      status: newArticle.status,
+      deletedAt: null,
     })
-    articles.value.unshift(newArticle)
+    _all.value.unshift(newArticle)
     return newArticle
   }
 
-  async function remove(id: string): Promise<void> {
-    await deleteDoc(doc(articlesCol(), id))
-    articles.value = articles.value.filter((a) => a.id !== id)
+  async function updateStatus(id: string, status: ArticleStatus): Promise<void> {
+    await updateDoc(doc(articlesCol(), id), { status })
+    const article = _all.value.find((a) => a.id === id)
+    if (article) article.status = status
   }
 
-  return { articles, fetchAll, getById, save, create, remove }
+  async function trash(id: string): Promise<void> {
+    const deletedAt = new Date().toISOString()
+    await updateDoc(doc(articlesCol(), id), { deletedAt })
+    const article = _all.value.find((a) => a.id === id)
+    if (article) article.deletedAt = deletedAt
+  }
+
+  async function restore(id: string): Promise<void> {
+    await updateDoc(doc(articlesCol(), id), { deletedAt: null })
+    const article = _all.value.find((a) => a.id === id)
+    if (article) article.deletedAt = null
+  }
+
+  async function permanentDelete(id: string): Promise<void> {
+    await deleteDoc(doc(articlesCol(), id))
+    _all.value = _all.value.filter((a) => a.id !== id)
+  }
+
+  return {
+    articles,
+    trashedArticles,
+    fetchAll,
+    getById,
+    save,
+    create,
+    updateStatus,
+    trash,
+    restore,
+    permanentDelete,
+  }
 })

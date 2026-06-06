@@ -411,6 +411,7 @@ async function onMenuToggleStatus() {
   menuOpen.value = false
   const next: ArticleStatus = currentArticleStatus.value === 'published' ? 'draft' : 'published'
   await articlesStore.updateStatus(selectedId.value, next)
+  isDirty.value = false
 }
 
 async function onMenuTrash() {
@@ -832,7 +833,7 @@ function formatDate(iso: string): string {
   border-radius: 10px;
   box-shadow: 0 4px 16px var(--app-shadow);
   z-index: 100;
-  min-width: 160px;
+  min-width: 180px;
   overflow: hidden;
   transition: background 0.3s;
 }

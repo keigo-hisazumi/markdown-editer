@@ -120,9 +120,9 @@ function onMenuTogglePreview() {
 }
 
 async function onMenuDelete() {
-  if (!confirm('この記事を削除しますか？')) return
+  if (!confirm('この記事をゴミ箱に移動しますか？')) return
   menuOpen.value = false
-  await articlesStore.remove(id)
+  await articlesStore.trash(id)
   router.push('/articles')
 }
 

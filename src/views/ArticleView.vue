@@ -18,32 +18,89 @@
           <span class="drawer-email">{{ authStore.user?.email ?? '' }}</span>
         </div>
         <div class="drawer-divider" />
-        <button class="drawer-item" @click="handleThemeToggle">
+
+        <!-- ビューモード切り替え -->
+        <button
+          :class="['drawer-item', { 'drawer-item--active': viewMode === 'all' }]"
+          @click="setViewMode('all')"
+        >
           <span class="drawer-item-icon">
-            <svg v-if="themeStore.isDark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-            </svg>
-            <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="5"/>
-              <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-              <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+              <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
             </svg>
           </span>
-          <span>{{ themeStore.isDark ? 'ダークモード' : 'ライトモード' }}</span>
+          <span>すべて</span>
         </button>
+        <button
+          :class="['drawer-item', { 'drawer-item--active': viewMode === 'draft' }]"
+          @click="setViewMode('draft')"
+        >
+          <span class="drawer-item-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+          </span>
+          <span>作成中</span>
+        </button>
+        <button
+          :class="['drawer-item', { 'drawer-item--active': viewMode === 'published' }]"
+          @click="setViewMode('published')"
+        >
+          <span class="drawer-item-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </span>
+          <span>投稿済み</span>
+        </button>
+        <button
+          :class="['drawer-item', { 'drawer-item--active': viewMode === 'trash' }]"
+          @click="setViewMode('trash')"
+        >
+          <span class="drawer-item-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+              <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+            </svg>
+          </span>
+          <span>ゴミ箱</span>
+          <span v-if="articlesStore.trashedArticles.length > 0" class="trash-badge">
+            {{ articlesStore.trashedArticles.length }}
+          </span>
+        </button>
+
         <div class="drawer-divider" />
-        <button class="drawer-item drawer-item--logout" @click="handleLogout">
-          <span class="drawer-item-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-          </span>
-          <span>ログアウト</span>
-        </button>
+        <div class="drawer-bottom">
+          <button class="drawer-item" @click="handleThemeToggle">
+            <span class="drawer-item-icon">
+              <svg v-if="themeStore.isDark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+              <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+              </svg>
+            </span>
+            <span>{{ themeStore.isDark ? 'ダークモード' : 'ライトモード' }}</span>
+          </button>
+          <div class="drawer-divider" />
+          <button class="drawer-item drawer-item--logout" @click="handleLogout">
+            <span class="drawer-item-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+            </span>
+            <span>ログアウト</span>
+          </button>
+        </div>
       </aside>
     </Transition>
 
@@ -54,7 +111,7 @@
           <span class="bar" /><span class="bar" /><span class="bar" />
         </button>
         <span class="sidebar-title">Markdown Editer</span>
-        <button v-if="sidebarTab === 'articles'" class="btn-compose" @click="handleCreate" aria-label="新規作成">
+        <button v-if="viewMode !== 'trash'" class="btn-compose" @click="handleCreate" aria-label="新規作成">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 20h9"/>
             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
@@ -63,36 +120,8 @@
         <div v-else style="width: 36px;" />
       </div>
 
-      <!-- サイドバータブ -->
-      <div class="sidebar-tabs">
-        <button
-          :class="['sidebar-tab', { active: sidebarTab === 'articles' }]"
-          @click="sidebarTab = 'articles'"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-          </svg>
-          記事
-        </button>
-        <button
-          :class="['sidebar-tab', { active: sidebarTab === 'trash' }]"
-          @click="sidebarTab = 'trash'"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="3 6 5 6 21 6"/>
-            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-            <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-          </svg>
-          ゴミ箱
-          <span v-if="articlesStore.trashedArticles.length > 0" class="trash-badge">
-            {{ articlesStore.trashedArticles.length }}
-          </span>
-        </button>
-      </div>
-
-      <!-- 記事タブ: 検索 & ステータスフィルター -->
-      <template v-if="sidebarTab === 'articles'">
+      <!-- 記事一覧（ゴミ箱以外） -->
+      <template v-if="viewMode !== 'trash'">
         <div class="search-bar-wrap">
           <div class="search-bar">
             <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -101,15 +130,6 @@
             </svg>
             <input v-model="searchQuery" type="search" class="search-input" placeholder="記事を検索" />
           </div>
-        </div>
-
-        <div class="status-filter">
-          <button
-            v-for="f in statusFilters"
-            :key="f.value"
-            :class="['status-filter-btn', { active: statusFilter === f.value }]"
-            @click="statusFilter = f.value"
-          >{{ f.label }}</button>
         </div>
 
         <!-- 記事リスト -->
@@ -138,7 +158,7 @@
         </div>
       </template>
 
-      <!-- ゴミ箱タブ -->
+      <!-- ゴミ箱 -->
       <template v-else>
         <div class="article-list">
           <div v-if="articlesStore.trashedArticles.length === 0" class="empty-state">
@@ -292,14 +312,12 @@ const isDirty = ref(false)
 const isPreview = ref(false)
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const windowWidth = ref(window.innerWidth)
-const sidebarTab = ref<'articles' | 'trash'>('articles')
-const statusFilter = ref<'all' | ArticleStatus>('all')
+const viewMode = ref<'all' | 'draft' | 'published' | 'trash'>('all')
 
-const statusFilters = [
-  { value: 'all' as const, label: 'すべて' },
-  { value: 'draft' as const, label: '作成中' },
-  { value: 'published' as const, label: '投稿済み' },
-]
+function setViewMode(mode: typeof viewMode.value) {
+  viewMode.value = mode
+  isDrawerOpen.value = false
+}
 
 const isMobile = computed(() => windowWidth.value < 768)
 const selectedId = computed(() => route.params.id as string | undefined)
@@ -312,8 +330,8 @@ const currentArticleStatus = computed(() => {
 
 const filteredArticles = computed(() => {
   let list = articlesStore.articles
-  if (statusFilter.value !== 'all') {
-    list = list.filter((a) => a.status === statusFilter.value)
+  if (viewMode.value === 'draft' || viewMode.value === 'published') {
+    list = list.filter((a) => a.status === viewMode.value)
   }
   const q = searchQuery.value.trim().toLowerCase()
   if (!q) return list
@@ -546,40 +564,6 @@ function formatDate(iso: string): string {
 
 .btn-compose:hover { background: var(--app-menu-hover); }
 
-/* サイドバータブ */
-.sidebar-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--app-border);
-  background: var(--app-bg);
-  flex-shrink: 0;
-}
-
-.sidebar-tab {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.6rem 0;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  font-size: 0.82rem;
-  font-weight: 500;
-  color: var(--app-text-muted);
-  cursor: pointer;
-  font-family: inherit;
-  transition: color 0.2s, border-color 0.2s;
-  position: relative;
-}
-
-.sidebar-tab.active {
-  color: var(--app-accent);
-  border-bottom-color: var(--app-accent);
-}
-
-.sidebar-tab:hover:not(.active) { color: var(--app-text-secondary); }
-
 .trash-badge {
   display: inline-flex;
   align-items: center;
@@ -593,6 +577,7 @@ function formatDate(iso: string): string {
   font-size: 0.65rem;
   font-weight: 700;
   line-height: 1;
+  margin-left: auto;
 }
 
 /* 検索バー */
@@ -634,39 +619,6 @@ function formatDate(iso: string): string {
 .search-input::placeholder { color: var(--app-text-muted); }
 .search-input::-webkit-search-cancel-button { -webkit-appearance: none; }
 
-/* ステータスフィルター */
-.status-filter {
-  display: flex;
-  gap: 0.4rem;
-  padding: 0.5rem 0.75rem;
-  background: var(--app-bg);
-  border-bottom: 1px solid var(--app-border);
-  flex-shrink: 0;
-}
-
-.status-filter-btn {
-  padding: 0.2rem 0.6rem;
-  border: 1px solid var(--app-border);
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  background: transparent;
-  color: var(--app-text-muted);
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-
-.status-filter-btn.active {
-  background: var(--app-accent);
-  color: #fff;
-  border-color: var(--app-accent);
-}
-
-.status-filter-btn:hover:not(.active) {
-  background: var(--app-menu-hover);
-  color: var(--app-text);
-}
 
 /* 記事リスト */
 .article-list {
@@ -1091,8 +1043,17 @@ function formatDate(iso: string): string {
 
 .drawer-item:hover .drawer-item-icon { color: var(--app-text-secondary); }
 
+.drawer-item--active {
+  color: var(--app-accent);
+  background: var(--app-active-bg);
+}
+
+.drawer-item--active .drawer-item-icon { color: var(--app-accent); }
+
 .drawer-item--logout:hover { color: var(--app-logout-hover-text); }
 .drawer-item--logout:hover .drawer-item-icon { color: var(--app-logout-hover-text); }
+
+.drawer-bottom { margin-top: auto; }
 
 /* ===== モバイル対応 ===== */
 @media (max-width: 767px) {

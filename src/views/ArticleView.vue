@@ -317,6 +317,10 @@ const viewMode = ref<'all' | 'draft' | 'published' | 'trash'>('all')
 function setViewMode(mode: typeof viewMode.value) {
   viewMode.value = mode
   isDrawerOpen.value = false
+  if (selectedId.value) {
+    if (isDirty.value) saveArticle()
+    router.push('/')
+  }
 }
 
 const isMobile = computed(() => windowWidth.value < 768)

@@ -317,10 +317,14 @@ const viewMode = ref<'all' | 'draft' | 'published' | 'trash'>('all')
 function setViewMode(mode: typeof viewMode.value) {
   viewMode.value = mode
   isDrawerOpen.value = false
+  if (selectedId.value) {
+    if (isDirty.value) saveArticle()
+    router.push('/')
+  }
 }
 
 const isMobile = computed(() => windowWidth.value < 768)
-const selectedId = computed(() => route.params.id as string | undefined)
+const selectedId = computed(() => route.query.id as string | undefined)
 const showEditor = computed(() => !!selectedId.value)
 
 const currentArticleStatus = computed(() => {
@@ -419,7 +423,7 @@ async function onMenuTrash() {
   menuOpen.value = false
   if (isDirty.value) await saveArticle()
   await articlesStore.trash(selectedId.value)
-  router.push('/articles')
+  router.push('/')
 }
 
 async function handleRestore(id: string) {
@@ -433,18 +437,18 @@ async function handlePermanentDelete(id: string) {
 
 function handleSelect(id: string) {
   if (isDirty.value && selectedId.value) saveArticle()
-  router.push(`/articles/${id}`)
+  router.push({ query: { id } })
 }
 
 async function handleCreate() {
   if (isDirty.value && selectedId.value) await saveArticle()
   const article = await articlesStore.create()
-  router.push(`/articles/${article.id}`)
+  router.push({ query: { id: article.id } })
 }
 
 function handleBack() {
   if (isDirty.value && selectedId.value) saveArticle()
-  router.push('/articles')
+  router.push('/')
 }
 
 function handleThemeToggle() { themeStore.toggleTheme() }

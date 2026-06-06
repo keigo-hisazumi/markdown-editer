@@ -66,7 +66,7 @@ async function handleSubmit() {
     } else {
       await authStore.login(email.value, password.value)
     }
-    router.push('/articles')
+    router.push('/')
   } catch (e: unknown) {
     const code = (e as { code?: string }).code ?? ''
     if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {

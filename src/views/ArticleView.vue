@@ -1053,7 +1053,10 @@ function formatDate(iso: string): string {
 .drawer-item--logout:hover { color: var(--app-logout-hover-text); }
 .drawer-item--logout:hover .drawer-item-icon { color: var(--app-logout-hover-text); }
 
-.drawer-bottom { margin-top: auto; }
+.drawer-bottom {
+  margin-top: auto;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
 
 /* ===== モバイル対応 ===== */
 @media (max-width: 767px) {

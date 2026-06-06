@@ -411,6 +411,7 @@ async function onMenuToggleStatus() {
   menuOpen.value = false
   const next: ArticleStatus = currentArticleStatus.value === 'published' ? 'draft' : 'published'
   await articlesStore.updateStatus(selectedId.value, next)
+  isDirty.value = false
 }
 
 async function onMenuTrash() {

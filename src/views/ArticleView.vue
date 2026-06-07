@@ -266,11 +266,14 @@
       </div>
 
       <div v-else class="editor-scroll">
-        <input
+        <textarea
+          ref="titleRef"
           v-model="title"
           class="title-input"
           placeholder="記事タイトル"
-          @input="markDirty"
+          rows="1"
+          :readonly="isPreview"
+          @input="onTitleInput"
         />
         <div v-if="!isPreview" class="editor-pane">
           <textarea
@@ -311,6 +314,7 @@ const content = ref('')
 const isDirty = ref(false)
 const isPreview = ref(false)
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const titleRef = ref<HTMLTextAreaElement | null>(null)
 const windowWidth = ref(window.innerWidth)
 const viewMode = ref<'all' | 'draft' | 'published' | 'trash'>('all')
 
@@ -378,6 +382,18 @@ onBeforeUnmount(() => {
   }
 })
 
+function autoResizeTitle() {
+  nextTick(() => {
+    const el = titleRef.value
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = el.scrollHeight + 'px'
+  })
+}
+
+watch(title, autoResizeTitle, { immediate: true })
+watch(isPreview, autoResizeTitle)
+
 function autoResize() {
   const el = textareaRef.value
   if (!el) return
@@ -386,6 +402,11 @@ function autoResize() {
 }
 
 function markDirty() { isDirty.value = true }
+
+function onTitleInput() {
+  markDirty()
+  autoResizeTitle()
+}
 
 function onContentInput() {
   markDirty()
@@ -906,19 +927,22 @@ function formatDate(iso: string): string {
 .title-input {
   display: block;
   width: 100%;
-  height: 53px;
   font-size: 1.4rem;
   font-weight: 700;
   border: none;
   border-bottom: 1px solid var(--app-border);
   outline: none;
   color: var(--app-text);
-  padding: 0 1.25rem;
+  padding: 0.75rem 1.25rem;
   background: var(--app-bg);
   flex-shrink: 0;
   box-sizing: border-box;
   transition: background 0.3s, color 0.3s, border-color 0.3s;
   font-family: inherit;
+  resize: none;
+  overflow: hidden;
+  word-break: break-word;
+  line-height: 1.4;
 }
 
 .title-input::placeholder { color: var(--app-text-placeholder); }

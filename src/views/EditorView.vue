@@ -32,13 +32,15 @@
 
     <main class="editor-body">
       <div class="scroll-container">
-        <div v-if="isPreview" class="title-preview">{{ title || '記事タイトル' }}</div>
-        <input
-          v-else
+        <textarea
+          ref="titleRef"
           v-model="title"
           class="title-input"
+          :class="{ 'title-input--preview': isPreview }"
           placeholder="記事タイトル"
-          @input="markDirty"
+          rows="1"
+          :readonly="isPreview"
+          @input="onTitleInput"
         />
         <div v-if="!isPreview" class="editor-pane">
           <textarea
@@ -80,8 +82,16 @@ const isPreview = ref(false)
 const isDirty = ref(false)
 const menuOpen = ref(false)
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const titleRef = ref<HTMLTextAreaElement | null>(null)
 
 const renderedContent = computed(() => marked(content.value))
+
+function autoResizeTitle() {
+  const el = titleRef.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = el.scrollHeight + 'px'
+}
 
 function autoResize() {
   const el = textareaRef.value
@@ -92,6 +102,11 @@ function autoResize() {
 
 function markDirty() {
   isDirty.value = true
+}
+
+function onTitleInput() {
+  markDirty()
+  autoResizeTitle()
 }
 
 function onContentInput() {
@@ -134,7 +149,7 @@ function closeMenu() {
 
 onMounted(() => {
   document.addEventListener('click', closeMenu)
-  nextTick(autoResize)
+  nextTick(() => { autoResizeTitle(); autoResize() })
 })
 onUnmounted(() => document.removeEventListener('click', closeMenu))
 
@@ -210,24 +225,19 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
   transition: background 0.3s, color 0.3s;
   font-family: inherit;
+  resize: none;
+  overflow: hidden;
+  word-break: break-word;
+  white-space: pre-wrap;
+  line-height: 1.4;
 }
 
 .title-input::placeholder {
   color: var(--app-text-placeholder);
 }
 
-.title-preview {
-  width: 100%;
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--app-text);
-  padding: 0.75rem 1.5rem;
-  background: var(--app-bg-soft);
-  box-sizing: border-box;
-  word-break: break-word;
-  white-space: pre-wrap;
-  transition: background 0.3s, color 0.3s;
-  font-family: inherit;
+.title-input--preview {
+  cursor: default;
 }
 
 .saved-label {

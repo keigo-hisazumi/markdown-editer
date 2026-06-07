@@ -60,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, onBeforeUnmount, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onBeforeUnmount, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { marked } from 'marked'
 import { useArticlesStore } from '@/stores/articles'
@@ -87,11 +87,16 @@ const titleRef = ref<HTMLTextAreaElement | null>(null)
 const renderedContent = computed(() => marked(content.value))
 
 function autoResizeTitle() {
-  const el = titleRef.value
-  if (!el) return
-  el.style.height = 'auto'
-  el.style.height = el.scrollHeight + 'px'
+  nextTick(() => {
+    const el = titleRef.value
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = el.scrollHeight + 'px'
+  })
 }
+
+watch(title, autoResizeTitle, { immediate: true })
+watch(isPreview, autoResizeTitle)
 
 function autoResize() {
   const el = textareaRef.value
@@ -149,7 +154,7 @@ function closeMenu() {
 
 onMounted(() => {
   document.addEventListener('click', closeMenu)
-  nextTick(() => { autoResizeTitle(); autoResize() })
+  nextTick(autoResize)
 })
 onUnmounted(() => document.removeEventListener('click', closeMenu))
 

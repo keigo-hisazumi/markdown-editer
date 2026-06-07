@@ -358,7 +358,10 @@ watch(selectedId, (id) => {
       content.value = article.content
       isDirty.value = false
       isPreview.value = false
-      nextTick(autoResize)
+      nextTick(() => {
+        autoResize()
+        autoResizeTitle()
+      })
     }
   }
 }, { immediate: true })
@@ -383,12 +386,12 @@ onBeforeUnmount(() => {
 })
 
 function autoResizeTitle() {
-  nextTick(() => {
+  nextTick(() => nextTick(() => {
     const el = titleRef.value
     if (!el) return
     el.style.height = 'auto'
     el.style.height = el.scrollHeight + 'px'
-  })
+  }))
 }
 
 watch(title, autoResizeTitle, { immediate: true })

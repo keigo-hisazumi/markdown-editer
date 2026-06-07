@@ -87,12 +87,12 @@ const titleRef = ref<HTMLTextAreaElement | null>(null)
 const renderedContent = computed(() => marked(content.value))
 
 function autoResizeTitle() {
-  nextTick(() => {
+  nextTick(() => nextTick(() => {
     const el = titleRef.value
     if (!el) return
     el.style.height = 'auto'
     el.style.height = el.scrollHeight + 'px'
-  })
+  }))
 }
 
 watch(title, autoResizeTitle, { immediate: true })

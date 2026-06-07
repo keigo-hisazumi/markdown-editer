@@ -32,11 +32,15 @@
 
     <main class="editor-body">
       <div class="scroll-container">
-        <input
+        <textarea
+          ref="titleRef"
           v-model="title"
           class="title-input"
+          :class="{ 'title-input--preview': isPreview }"
           placeholder="記事タイトル"
-          @input="markDirty"
+          rows="1"
+          :readonly="isPreview"
+          @input="onTitleInput"
         />
         <div v-if="!isPreview" class="editor-pane">
           <textarea
@@ -56,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, onBeforeUnmount, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onBeforeUnmount, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { marked } from 'marked'
 import { useArticlesStore } from '@/stores/articles'
@@ -78,8 +82,21 @@ const isPreview = ref(false)
 const isDirty = ref(false)
 const menuOpen = ref(false)
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const titleRef = ref<HTMLTextAreaElement | null>(null)
 
 const renderedContent = computed(() => marked(content.value))
+
+function autoResizeTitle() {
+  nextTick(() => nextTick(() => {
+    const el = titleRef.value
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = el.scrollHeight + 'px'
+  }))
+}
+
+watch(title, autoResizeTitle, { immediate: true })
+watch(isPreview, autoResizeTitle)
 
 function autoResize() {
   const el = textareaRef.value
@@ -90,6 +107,11 @@ function autoResize() {
 
 function markDirty() {
   isDirty.value = true
+}
+
+function onTitleInput() {
+  markDirty()
+  autoResizeTitle()
 }
 
 function onContentInput() {
@@ -208,10 +230,19 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
   transition: background 0.3s, color 0.3s;
   font-family: inherit;
+  resize: none;
+  overflow: hidden;
+  word-break: break-word;
+  white-space: pre-wrap;
+  line-height: 1.4;
 }
 
 .title-input::placeholder {
   color: var(--app-text-placeholder);
+}
+
+.title-input--preview {
+  cursor: default;
 }
 
 .saved-label {

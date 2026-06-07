@@ -32,7 +32,9 @@
 
     <main class="editor-body">
       <div class="scroll-container">
+        <div v-if="isPreview" class="title-preview">{{ title || '記事タイトル' }}</div>
         <input
+          v-else
           v-model="title"
           class="title-input"
           placeholder="記事タイトル"
@@ -212,6 +214,20 @@ onBeforeUnmount(() => {
 
 .title-input::placeholder {
   color: var(--app-text-placeholder);
+}
+
+.title-preview {
+  width: 100%;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--app-text);
+  padding: 0.75rem 1.5rem;
+  background: var(--app-bg-soft);
+  box-sizing: border-box;
+  word-break: break-word;
+  white-space: pre-wrap;
+  transition: background 0.3s, color 0.3s;
+  font-family: inherit;
 }
 
 .saved-label {

@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/markdown-editer/pr-28/sw.js', { scope: '/markdown-editer/pr-28/' })})}

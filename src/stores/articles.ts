@@ -36,16 +36,6 @@ interface ArticlesState {
   permanentDelete: (id: string) => Promise<void>
 }
 
-/** ゴミ箱以外の記事一覧 */
-export function selectArticles(state: ArticlesState): Article[] {
-  return state.all.filter((a) => !a.deletedAt)
-}
-
-/** ゴミ箱の記事一覧 */
-export function selectTrashedArticles(state: ArticlesState): Article[] {
-  return state.all.filter((a) => !!a.deletedAt)
-}
-
 function articlesCol() {
   const { user } = useAuthStore.getState()
   if (!user) throw new Error('未ログイン')

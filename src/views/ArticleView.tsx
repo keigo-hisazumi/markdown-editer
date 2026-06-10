@@ -8,11 +8,7 @@ import {
 } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { marked } from 'marked'
-import {
-  useArticlesStore,
-  selectArticles,
-  selectTrashedArticles,
-} from '@/stores/articles'
+import { useArticlesStore } from '@/stores/articles'
 import type { ArticleStatus } from '@/stores/articles'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
@@ -34,8 +30,12 @@ function formatDate(iso: string): string {
 export default function ArticleView() {
   const [searchParams, setSearchParams] = useSearchParams()
   const articlesStore = useArticlesStore()
-  const articles = useArticlesStore(selectArticles)
-  const trashedArticles = useArticlesStore(selectTrashedArticles)
+  // セレクタで毎レンダー新しい配列を返すと useSyncExternalStore の getSnapshot が
+  // 不安定になり無限再レンダー（React error #185）になるため、
+  // ストアからは all をそのまま購読し、派生リストは useMemo で計算する
+  const all = useArticlesStore((s) => s.all)
+  const articles = useMemo(() => all.filter((a) => !a.deletedAt), [all])
+  const trashedArticles = useMemo(() => all.filter((a) => !!a.deletedAt), [all])
   const userEmail = useAuthStore((s) => s.user?.email ?? '')
   const logout = useAuthStore((s) => s.logout)
   const isDark = useThemeStore((s) => s.isDark)

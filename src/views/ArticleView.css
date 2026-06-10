@@ -464,7 +464,7 @@
   border: none;
   outline: none;
   resize: none;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: 'Noto Sans Mono JP', 'SFMono-Regular', Consolas, Menlo, 'Noto Sans JP', monospace;
   font-size: 1rem;
   line-height: 1.7;
   color: var(--app-text);
@@ -661,7 +661,7 @@
   background: var(--app-bg-soft);
   padding: 0.15em 0.4em;
   border-radius: 4px;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: 'Noto Sans Mono JP', 'SFMono-Regular', Consolas, Menlo, monospace;
   font-size: 0.875em;
   color: #ef4444;
 }

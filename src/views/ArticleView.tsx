@@ -79,20 +79,16 @@ export default function ArticleView() {
     [content],
   )
 
-  // 記事の切り替え時にエディタへ内容を読み込む（レンダー中の状態調整パターン）
-  const [prevSelectedId, setPrevSelectedId] = useState<string | null | undefined>(null)
-  if (prevSelectedId !== selectedId) {
-    setPrevSelectedId(selectedId)
-    if (selectedId) {
-      const article = articlesStore.getById(selectedId)
-      if (article) {
-        setTitle(article.title)
-        setContent(article.content)
-        setIsDirty(false)
-        setIsPreview(false)
-      }
-    }
-  }
+  // 記事の切り替え時にエディタへ内容を読み込む
+  useEffect(() => {
+    if (!selectedId) return
+    const article = useArticlesStore.getState().getById(selectedId)
+    if (!article) return
+    setTitle(article.title)
+    setContent(article.content)
+    setIsDirty(false)
+    setIsPreview(false)
+  }, [selectedId])
 
   useEffect(() => {
     articlesStore.fetchAll()

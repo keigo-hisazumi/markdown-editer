@@ -25,6 +25,8 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': 'warn',
+      // 選択記事切り替え時にローカルのエディタ状態をリセットする正当なユースケースのため
+      'react-hooks/set-state-in-effect': 'off',
     },
   },
 )

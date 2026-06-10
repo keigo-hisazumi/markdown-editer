@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app'
-import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth'
+import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 
 const firebaseConfig = {
@@ -14,6 +14,5 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 
 export const auth = getAuth(app)
-// IndexedDB が使えない環境でも localStorage でログイン状態を維持する
-setPersistence(auth, browserLocalPersistence)
+// browserLocalPersistence は Firebase Auth のデフォルトのため setPersistence 不要
 export const db = getFirestore(app)

@@ -1,5 +1,4 @@
-import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { create } from 'zustand'
 import {
   collection,
   doc,
@@ -24,51 +23,61 @@ export interface Article {
   deletedAt: string | null
 }
 
-export const useArticlesStore = defineStore('articles', () => {
-  const _all = ref<Article[]>([])
+interface ArticlesState {
+  /** ゴミ箱の記事も含めた全記事 */
+  all: Article[]
+  fetchAll: () => Promise<void>
+  getById: (id: string) => Article | undefined
+  save: (id: string, title: string, content: string) => Promise<void>
+  createArticle: () => Promise<Article>
+  updateStatus: (id: string, status: ArticleStatus) => Promise<void>
+  trash: (id: string) => Promise<void>
+  restore: (id: string) => Promise<void>
+  permanentDelete: (id: string) => Promise<void>
+}
 
-  const articles = computed(() => _all.value.filter((a) => !a.deletedAt))
-  const trashedArticles = computed(() => _all.value.filter((a) => !!a.deletedAt))
+function articlesCol() {
+  const { user } = useAuthStore.getState()
+  if (!user) throw new Error('未ログイン')
+  return collection(db, 'users', user.id, 'articles')
+}
 
-  function articlesCol() {
-    const authStore = useAuthStore()
-    if (!authStore.user) throw new Error('未ログイン')
-    return collection(db, 'users', authStore.user.id, 'articles')
-  }
+export const useArticlesStore = create<ArticlesState>((set, get) => ({
+  all: [],
 
-  async function fetchAll(): Promise<void> {
+  async fetchAll(): Promise<void> {
     const q = query(articlesCol(), orderBy('updatedAt', 'desc'))
     const snap = await getDocs(q)
-    _all.value = snap.docs.map((d) => {
-      const data = d.data() as Omit<Article, 'id'>
-      return {
-        id: d.id,
-        status: data.status ?? 'draft',
-        deletedAt: data.deletedAt ?? null,
-        title: data.title,
-        content: data.content,
-        updatedAt: data.updatedAt,
-      }
+    set({
+      all: snap.docs.map((d) => {
+        const data = d.data() as Omit<Article, 'id'>
+        return {
+          id: d.id,
+          status: data.status ?? 'draft',
+          deletedAt: data.deletedAt ?? null,
+          title: data.title,
+          content: data.content,
+          updatedAt: data.updatedAt,
+        }
+      }),
     })
-  }
+  },
 
-  function getById(id: string): Article | undefined {
-    return _all.value.find((a) => a.id === id)
-  }
+  getById(id: string): Article | undefined {
+    return get().all.find((a) => a.id === id)
+  },
 
-  async function save(id: string, title: string, content: string): Promise<void> {
+  async save(id: string, title: string, content: string): Promise<void> {
     const updatedAt = new Date().toISOString()
-    const article = _all.value.find((a) => a.id === id)
+    const article = get().all.find((a) => a.id === id)
     const status = article?.status ?? 'draft'
     await setDoc(doc(articlesCol(), id), { title, content, updatedAt, status, deletedAt: null })
-    if (article) {
-      article.title = title
-      article.content = content
-      article.updatedAt = updatedAt
-    }
-  }
+    set((state) => ({
+      all: state.all.map((a) => (a.id === id ? { ...a, title, content, updatedAt } : a)),
+    }))
+  },
 
-  async function create(): Promise<Article> {
+  async createArticle(): Promise<Article> {
     const newArticle: Article = {
       id: String(Date.now()),
       title: '新しい記事',
@@ -84,44 +93,34 @@ export const useArticlesStore = defineStore('articles', () => {
       status: newArticle.status,
       deletedAt: null,
     })
-    _all.value.unshift(newArticle)
+    set((state) => ({ all: [newArticle, ...state.all] }))
     return newArticle
-  }
+  },
 
-  async function updateStatus(id: string, status: ArticleStatus): Promise<void> {
+  async updateStatus(id: string, status: ArticleStatus): Promise<void> {
     await updateDoc(doc(articlesCol(), id), { status })
-    const article = _all.value.find((a) => a.id === id)
-    if (article) article.status = status
-  }
+    set((state) => ({
+      all: state.all.map((a) => (a.id === id ? { ...a, status } : a)),
+    }))
+  },
 
-  async function trash(id: string): Promise<void> {
+  async trash(id: string): Promise<void> {
     const deletedAt = new Date().toISOString()
     await updateDoc(doc(articlesCol(), id), { deletedAt })
-    const article = _all.value.find((a) => a.id === id)
-    if (article) article.deletedAt = deletedAt
-  }
+    set((state) => ({
+      all: state.all.map((a) => (a.id === id ? { ...a, deletedAt } : a)),
+    }))
+  },
 
-  async function restore(id: string): Promise<void> {
+  async restore(id: string): Promise<void> {
     await updateDoc(doc(articlesCol(), id), { deletedAt: null })
-    const article = _all.value.find((a) => a.id === id)
-    if (article) article.deletedAt = null
-  }
+    set((state) => ({
+      all: state.all.map((a) => (a.id === id ? { ...a, deletedAt: null } : a)),
+    }))
+  },
 
-  async function permanentDelete(id: string): Promise<void> {
+  async permanentDelete(id: string): Promise<void> {
     await deleteDoc(doc(articlesCol(), id))
-    _all.value = _all.value.filter((a) => a.id !== id)
-  }
-
-  return {
-    articles,
-    trashedArticles,
-    fetchAll,
-    getById,
-    save,
-    create,
-    updateStatus,
-    trash,
-    restore,
-    permanentDelete,
-  }
-})
+    set((state) => ({ all: state.all.filter((a) => a.id !== id) }))
+  },
+}))

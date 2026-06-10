@@ -1,6 +1,7 @@
 import js from '@eslint/js'
 import globals from 'globals'
-import pluginVue from 'eslint-plugin-vue'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
@@ -15,18 +16,17 @@ export default tseslint.config(
     },
   },
   ...tseslint.configs.recommended,
-  ...pluginVue.configs['flat/recommended'],
   {
-    files: ['*.vue', '**/*.vue'],
-    languageOptions: {
-      parserOptions: {
-        parser: tseslint.parser,
-      },
+    files: ['**/*.{ts,tsx}'],
+    plugins: {
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
     },
-  },
-  {
     rules: {
-      'vue/multi-word-component-names': 'off',
+      ...reactHooks.configs.recommended.rules,
+      'react-refresh/only-export-components': 'warn',
+      // 選択記事切り替え時にローカルのエディタ状態をリセットする正当なユースケースのため
+      'react-hooks/set-state-in-effect': 'off',
     },
   },
 )

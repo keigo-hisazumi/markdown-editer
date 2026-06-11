@@ -158,6 +158,15 @@
   --app-logout-hover-text: #e53935;
 }
 
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
+#app {
+  height: 100%;
+}
+
 *,
 *::before,
 *::after {
@@ -181,7 +190,8 @@ html.theme-transitioning *::after {
 }
 
 body {
-  min-height: 100vh;
+  height: 100%;
+  overflow: hidden;
   color: var(--app-text);
   background: var(--app-bg-soft);
   transition:

@@ -1,6 +1,7 @@
 .article-app {
   display: flex;
   height: 100vh;
+  height: 100svh;
   overflow: hidden;
   background: var(--app-bg);
   transition: background 0.3s;
@@ -155,8 +156,10 @@
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
   background: var(--app-bg);
   transition: background 0.3s;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .empty-state {
@@ -620,7 +623,10 @@
   .article-sidebar,
   .article-main {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     width: 100%;
   }
 

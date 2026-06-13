@@ -172,12 +172,42 @@
 .empty-state p { margin: 0.5rem 0; }
 .empty-hint { font-size: 0.9rem; }
 
+/* スワイプ削除（タッチ操作で左にスワイプしてゴミ箱ボタンを表示） */
+.article-item-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.article-item-wrapper:last-child .article-item { border-bottom: none; }
+
+.article-item-delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  border: none;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.78rem;
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .article-item {
+  position: relative;
   background: var(--app-bg);
   cursor: pointer;
   border-bottom: 1px solid var(--app-border);
   transition: background 0.15s, border-color 0.3s;
   -webkit-tap-highlight-color: transparent;
+  touch-action: pan-y;
+  will-change: transform;
 }
 
 .article-item--trash { cursor: default; }

@@ -176,11 +176,22 @@
 .article-item-wrapper {
   position: relative;
   overflow: hidden;
-  border-bottom: 1px solid var(--app-border);
-  transition: border-color 0.3s;
 }
 
-.article-item-wrapper:last-child { border-bottom: none; }
+.article-item-wrapper::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--app-border);
+  transition: background 0.3s;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.article-item-wrapper:last-child::after { display: none; }
 
 .article-item-delete {
   position: absolute;

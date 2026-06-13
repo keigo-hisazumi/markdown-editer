@@ -3,6 +3,26 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth'
 import './LoginView.css'
 
+function errorMessage(e: unknown): string {
+  const code = (e as { code?: string }).code ?? ''
+  switch (code) {
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+      return 'メールアドレスまたはパスワードが正しくありません'
+    case 'auth/email-already-in-use':
+      return 'このメールアドレスはすでに使用されています'
+    case 'auth/weak-password':
+      return 'パスワードは6文字以上で入力してください'
+    case 'auth/invalid-email':
+      return 'メールアドレスの形式が正しくありません'
+    case 'auth/too-many-requests':
+      return 'しばらくしてから再度お試しください'
+    default:
+      return 'エラーが発生しました。もう一度お試しください'
+  }
+}
+
 export default function LoginView() {
   const navigate = useNavigate()
   const login = useAuthStore((s) => s.login)
@@ -26,16 +46,7 @@ export default function LoginView() {
       }
       navigate('/')
     } catch (e: unknown) {
-      const code = (e as { code?: string }).code ?? ''
-      if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
-        setErrorMsg('メールアドレスまたはパスワードが正しくありません')
-      } else if (code === 'auth/email-already-in-use') {
-        setErrorMsg('このメールアドレスはすでに使用されています')
-      } else if (code === 'auth/weak-password') {
-        setErrorMsg('パスワードは6文字以上で入力してください')
-      } else {
-        setErrorMsg('エラーが発生しました。もう一度お試しください')
-      }
+      setErrorMsg(errorMessage(e))
     } finally {
       setLoading(false)
     }
@@ -77,6 +88,7 @@ export default function LoginView() {
           {errorMsg && <p className="error-msg">{errorMsg}</p>}
 
           <button type="submit" className="btn-primary" disabled={loading}>
+            {loading && <span className="loading-spinner" />}
             {loading ? '処理中...' : isSignup ? 'アカウント作成' : 'ログイン'}
           </button>
         </form>

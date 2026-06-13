@@ -81,6 +81,10 @@
 }
 
 .btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   padding: 0.875rem;
   background: var(--app-accent);
   color: white;
@@ -91,6 +95,22 @@
   cursor: pointer;
   transition: opacity 0.2s;
   font-family: inherit;
+}
+
+.loading-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .btn-primary:hover:not(:disabled) {

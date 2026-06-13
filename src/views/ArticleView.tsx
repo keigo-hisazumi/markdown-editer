@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type KeyboardEvent,
 } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { marked } from 'marked'
@@ -12,6 +13,7 @@ import { useArticlesStore } from '@/stores/articles'
 import type { ArticleStatus } from '@/stores/articles'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
+import ArticleListItem from '@/components/ArticleListItem'
 import './ArticleView.css'
 
 type ViewMode = 'all' | 'draft' | 'published' | 'trash'
@@ -50,9 +52,11 @@ export default function ArticleView() {
   const [isPreview, setIsPreview] = useState(false)
   const [windowWidth, setWindowWidth] = useState(window.innerWidth)
   const [viewMode, setViewMode] = useState<ViewMode>('all')
+  const [openSwipeId, setOpenSwipeId] = useState<string | null>(null)
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const titleRef = useRef<HTMLTextAreaElement | null>(null)
+  const suppressClickRef = useRef(0)
 
   const isMobile = windowWidth < 768
   const selectedId = searchParams.get('id') ?? undefined
@@ -91,17 +95,32 @@ export default function ArticleView() {
   }, [selectedId])
 
   useEffect(() => {
-    articlesStore.fetchAll()
+    // Firestore のリアルタイム購読を開始し、デバイス間で記事を同期する
+    articlesStore.subscribe()
     const onResize = () => setWindowWidth(window.innerWidth)
     const closeMenu = () => setMenuOpen(false)
     window.addEventListener('resize', onResize)
     document.addEventListener('click', closeMenu)
     return () => {
+      articlesStore.unsubscribe()
       window.removeEventListener('resize', onResize)
       document.removeEventListener('click', closeMenu)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // スワイプで開いた削除ボタンを、外側のタップで閉じる
+  useEffect(() => {
+    if (openSwipeId === null) return
+    function onDocPointerDown(e: globalThis.PointerEvent) {
+      const target = e.target as HTMLElement | null
+      if (target?.closest('.article-item-delete')) return
+      suppressClickRef.current = Date.now()
+      setOpenSwipeId(null)
+    }
+    document.addEventListener('pointerdown', onDocPointerDown)
+    return () => document.removeEventListener('pointerdown', onDocPointerDown)
+  }, [openSwipeId])
 
   // アンマウント時に未保存の変更を保存する
   const latestRef = useRef({ isDirty, selectedId, title, content })
@@ -157,6 +176,27 @@ export default function ArticleView() {
     setIsDirty(true)
   }
 
+  // タイトルで Enter を押したら本文へフォーカスを移す
+  function onTitleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      textareaRef.current?.focus()
+    }
+  }
+
+  // 本文の先頭で Backspace を押したらタイトル末尾へフォーカスを戻す
+  function onContentKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Backspace') {
+      const el = e.currentTarget
+      if (el.selectionStart === 0 && el.selectionEnd === 0) {
+        e.preventDefault()
+        const end = title.length
+        titleRef.current?.focus()
+        setTimeout(() => titleRef.current?.setSelectionRange(end, end), 0)
+      }
+    }
+  }
+
   function togglePreview() {
     if (!isPreview && isDirty) saveArticle()
     setIsPreview((v) => !v)
@@ -181,6 +221,14 @@ export default function ArticleView() {
     if (isDirty) await saveArticle()
     await articlesStore.trash(selectedId)
     setSearchParams({})
+  }
+
+  // 一覧のスワイプ操作からゴミ箱へ移動する
+  async function handleListTrash(id: string) {
+    setOpenSwipeId(null)
+    if (isDirty && selectedId === id) await saveArticle()
+    await articlesStore.trash(id)
+    if (selectedId === id) setSearchParams({})
   }
 
   async function handleRestore(id: string) {
@@ -379,22 +427,16 @@ export default function ArticleView() {
                 </div>
               )}
               {filteredArticles.map((article) => (
-                <div
+                <ArticleListItem
                   key={article.id}
-                  className={`article-item${selectedId === article.id ? ' active' : ''}`}
-                  onClick={() => handleSelect(article.id)}
-                >
-                  <div className="article-item-inner">
-                    <div className="article-item-header">
-                      <h2 className="article-title">{article.title || '無題の記事'}</h2>
-                      <span className={`status-badge status-badge--${article.status}`}>
-                        {article.status === 'published' ? '投稿済み' : '作成中'}
-                      </span>
-                    </div>
-                    <p className="article-preview">{previewText(article.content)}</p>
-                    <time className="article-date">{formatDate(article.updatedAt)}</time>
-                  </div>
-                </div>
+                  article={article}
+                  active={selectedId === article.id}
+                  isOpen={openSwipeId === article.id}
+                  suppressClickRef={suppressClickRef}
+                  onSelect={handleSelect}
+                  onTrash={handleListTrash}
+                  onOpen={setOpenSwipeId}
+                />
               ))}
             </div>
           </>
@@ -533,6 +575,7 @@ export default function ArticleView() {
               ref={titleRef}
               value={title}
               onChange={onTitleInput}
+              onKeyDown={onTitleKeyDown}
               className="title-input"
               placeholder="記事タイトル"
               rows={1}
@@ -544,6 +587,7 @@ export default function ArticleView() {
                   ref={textareaRef}
                   value={content}
                   onChange={onContentInput}
+                  onKeyDown={onContentKeyDown}
                   className="markdown-input"
                   placeholder="Markdown で書いてください..."
                   spellCheck={false}

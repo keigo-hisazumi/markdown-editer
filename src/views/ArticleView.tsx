@@ -91,12 +91,14 @@ export default function ArticleView() {
   }, [selectedId])
 
   useEffect(() => {
-    articlesStore.fetchAll()
+    // Firestore のリアルタイム購読を開始し、デバイス間で記事を同期する
+    articlesStore.subscribe()
     const onResize = () => setWindowWidth(window.innerWidth)
     const closeMenu = () => setMenuOpen(false)
     window.addEventListener('resize', onResize)
     document.addEventListener('click', closeMenu)
     return () => {
+      articlesStore.unsubscribe()
       window.removeEventListener('resize', onResize)
       document.removeEventListener('click', closeMenu)
     }

@@ -2,12 +2,13 @@ import { create } from 'zustand'
 import {
   collection,
   doc,
-  getDocs,
   setDoc,
   deleteDoc,
   updateDoc,
   query,
   orderBy,
+  onSnapshot,
+  type Unsubscribe,
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuthStore } from '@/stores/auth'
@@ -26,7 +27,10 @@ export interface Article {
 interface ArticlesState {
   /** ゴミ箱の記事も含めた全記事 */
   all: Article[]
-  fetchAll: () => Promise<void>
+  /** Firestore のリアルタイム購読を開始し、デバイス間で記事を同期する */
+  subscribe: () => void
+  /** リアルタイム購読を解除し、状態を初期化する */
+  unsubscribe: () => void
   getById: (id: string) => Article | undefined
   save: (id: string, title: string, content: string) => Promise<void>
   createArticle: () => Promise<Article>
@@ -42,25 +46,40 @@ function articlesCol() {
   return collection(db, 'users', user.id, 'articles')
 }
 
+// Firestore の購読解除関数をモジュールスコープで保持する
+let unsub: Unsubscribe | null = null
+
 export const useArticlesStore = create<ArticlesState>((set, get) => ({
   all: [],
 
-  async fetchAll(): Promise<void> {
+  subscribe(): void {
+    const { user } = useAuthStore.getState()
+    if (!user) return
+    if (unsub) unsub()
     const q = query(articlesCol(), orderBy('updatedAt', 'desc'))
-    const snap = await getDocs(q)
-    set({
-      all: snap.docs.map((d) => {
-        const data = d.data() as Omit<Article, 'id'>
-        return {
-          id: d.id,
-          status: data.status ?? 'draft',
-          deletedAt: data.deletedAt ?? null,
-          title: data.title,
-          content: data.content,
-          updatedAt: data.updatedAt,
-        }
-      }),
+    unsub = onSnapshot(q, (snap) => {
+      set({
+        all: snap.docs.map((d) => {
+          const data = d.data() as Omit<Article, 'id'>
+          return {
+            id: d.id,
+            status: data.status ?? 'draft',
+            deletedAt: data.deletedAt ?? null,
+            title: data.title,
+            content: data.content,
+            updatedAt: data.updatedAt,
+          }
+        }),
+      })
     })
+  },
+
+  unsubscribe(): void {
+    if (unsub) {
+      unsub()
+      unsub = null
+    }
+    set({ all: [] })
   },
 
   getById(id: string): Article | undefined {

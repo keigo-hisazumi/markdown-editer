@@ -158,6 +158,36 @@
   --app-logout-hover-text: #e53935;
 }
 
+/* スクロールバー：両モードで枠線・背景なし、サムのみ薄く表示 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(128, 128, 128, 0.3) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+  border: none;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.3);
+  border-radius: 3px;
+  border: none;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.5);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 html {
   height: 100%;
   overflow: hidden;

@@ -12,6 +12,8 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { useAuthStore } from '@/stores/auth'
+import { loadLocalArticles, saveLocalArticles } from '@/lib/localStore'
+import { mergeArticles } from '@/lib/mergeArticles'
 
 export type ArticleStatus = 'draft' | 'published'
 
@@ -27,7 +29,7 @@ export interface Article {
 interface ArticlesState {
   /** ゴミ箱の記事も含めた全記事 */
   all: Article[]
-  /** Firestore のリアルタイム購読を開始し、デバイス間で記事を同期する */
+  /** ローカルデータの読み込みと Firestore のリアルタイム購読を開始する */
   subscribe: () => void
   /** リアルタイム購読を解除し、状態を初期化する */
   unsubscribe: () => void
@@ -40,37 +42,76 @@ interface ArticlesState {
   permanentDelete: (id: string) => Promise<void>
 }
 
+function currentUserId(): string | null {
+  return useAuthStore.getState().user?.id ?? null
+}
+
 function articlesCol() {
-  const { user } = useAuthStore.getState()
-  if (!user) throw new Error('未ログイン')
-  return collection(db, 'users', user.id, 'articles')
+  const userId = currentUserId()
+  if (!userId) throw new Error('未ログイン')
+  return collection(db, 'users', userId, 'articles')
+}
+
+/** Firestore ドキュメントを Article 型へ正規化する */
+function toArticle(id: string, data: Omit<Article, 'id'>): Article {
+  return {
+    id,
+    title: data.title,
+    content: data.content,
+    updatedAt: data.updatedAt,
+    status: data.status ?? 'draft',
+    deletedAt: data.deletedAt ?? null,
+  }
+}
+
+/** Article を Firestore へ保存する形（id を除いた全フィールド）に変換する */
+function toDocData(article: Article): Omit<Article, 'id'> {
+  return {
+    title: article.title,
+    content: article.content,
+    updatedAt: article.updatedAt,
+    status: article.status,
+    deletedAt: article.deletedAt,
+  }
 }
 
 // Firestore の購読解除関数をモジュールスコープで保持する
 let unsub: Unsubscribe | null = null
 
+/**
+ * Firestore への書き込みエラーを処理する。
+ * オフライン時は書き込みが保留されるだけで失敗しないため、
+ * ここに到達するのは権限エラーなど。UI は止めず警告のみ出す。
+ */
+function reportWriteError(error: unknown): void {
+  console.warn('Firestore への書き込みに失敗しました', error)
+}
+
 export const useArticlesStore = create<ArticlesState>((set, get) => ({
   all: [],
 
   subscribe(): void {
-    const { user } = useAuthStore.getState()
-    if (!user) return
+    const userId = currentUserId()
+    if (!userId) return
     if (unsub) unsub()
+
+    // まずローカルデータを読み込み、オフラインでもすぐに利用できるようにする
+    set({ all: loadLocalArticles(userId) })
+
+    // Firestore のリアルタイム購読を開始する。スナップショット受信時に
+    // ローカルと更新日時で比較してマージし、デバイス間で記事を同期する。
     const q = query(articlesCol(), orderBy('updatedAt', 'desc'))
     unsub = onSnapshot(q, (snap) => {
-      set({
-        all: snap.docs.map((d) => {
-          const data = d.data() as Omit<Article, 'id'>
-          return {
-            id: d.id,
-            status: data.status ?? 'draft',
-            deletedAt: data.deletedAt ?? null,
-            title: data.title,
-            content: data.content,
-            updatedAt: data.updatedAt,
-          }
-        }),
-      })
+      const remote = snap.docs.map((d) => toArticle(d.id, d.data() as Omit<Article, 'id'>))
+      const { merged, toPush } = mergeArticles(get().all, remote)
+
+      set({ all: merged })
+      saveLocalArticles(userId, merged)
+
+      // ローカルの方が新しい記事をリモートへ反映（新しい方で上書き）する
+      for (const article of toPush) {
+        setDoc(doc(articlesCol(), article.id), toDocData(article)).catch(reportWriteError)
+      }
     })
   },
 
@@ -88,12 +129,19 @@ export const useArticlesStore = create<ArticlesState>((set, get) => ({
 
   async save(id: string, title: string, content: string): Promise<void> {
     const updatedAt = new Date().toISOString()
-    const article = get().all.find((a) => a.id === id)
-    const status = article?.status ?? 'draft'
-    await setDoc(doc(articlesCol(), id), { title, content, updatedAt, status, deletedAt: null })
-    set((state) => ({
-      all: state.all.map((a) => (a.id === id ? { ...a, title, content, updatedAt } : a)),
-    }))
+    const status = get().all.find((a) => a.id === id)?.status ?? 'draft'
+    const updated: Partial<Article> = { title, content, updatedAt, status, deletedAt: null }
+
+    // ローカルを先に更新し、オフラインでも保存できるようにする
+    const next = get().all.map((a) => (a.id === id ? { ...a, ...updated } : a))
+    set({ all: next })
+    persist(next)
+
+    // リモートへは保留可能な書き込みとして送る（オフライン時は再接続時に送信される）
+    const article = next.find((a) => a.id === id)
+    if (article) {
+      setDoc(doc(articlesCol(), id), toDocData(article)).catch(reportWriteError)
+    }
   },
 
   async createArticle(): Promise<Article> {
@@ -105,41 +153,55 @@ export const useArticlesStore = create<ArticlesState>((set, get) => ({
       status: 'draft',
       deletedAt: null,
     }
-    await setDoc(doc(articlesCol(), newArticle.id), {
-      title: newArticle.title,
-      content: newArticle.content,
-      updatedAt: newArticle.updatedAt,
-      status: newArticle.status,
-      deletedAt: null,
-    })
-    set((state) => ({ all: [newArticle, ...state.all] }))
+
+    const next = [newArticle, ...get().all]
+    set({ all: next })
+    persist(next)
+
+    setDoc(doc(articlesCol(), newArticle.id), toDocData(newArticle)).catch(reportWriteError)
     return newArticle
   },
 
   async updateStatus(id: string, status: ArticleStatus): Promise<void> {
-    await updateDoc(doc(articlesCol(), id), { status })
-    set((state) => ({
-      all: state.all.map((a) => (a.id === id ? { ...a, status } : a)),
-    }))
+    // 更新日時を更新し、競合時に updatedAt で正しく解決できるようにする
+    const updatedAt = new Date().toISOString()
+    const next = get().all.map((a) => (a.id === id ? { ...a, status, updatedAt } : a))
+    set({ all: next })
+    persist(next)
+
+    updateDoc(doc(articlesCol(), id), { status, updatedAt }).catch(reportWriteError)
   },
 
   async trash(id: string): Promise<void> {
     const deletedAt = new Date().toISOString()
-    await updateDoc(doc(articlesCol(), id), { deletedAt })
-    set((state) => ({
-      all: state.all.map((a) => (a.id === id ? { ...a, deletedAt } : a)),
-    }))
+    const updatedAt = deletedAt
+    const next = get().all.map((a) => (a.id === id ? { ...a, deletedAt, updatedAt } : a))
+    set({ all: next })
+    persist(next)
+
+    updateDoc(doc(articlesCol(), id), { deletedAt, updatedAt }).catch(reportWriteError)
   },
 
   async restore(id: string): Promise<void> {
-    await updateDoc(doc(articlesCol(), id), { deletedAt: null })
-    set((state) => ({
-      all: state.all.map((a) => (a.id === id ? { ...a, deletedAt: null } : a)),
-    }))
+    const updatedAt = new Date().toISOString()
+    const next = get().all.map((a) => (a.id === id ? { ...a, deletedAt: null, updatedAt } : a))
+    set({ all: next })
+    persist(next)
+
+    updateDoc(doc(articlesCol(), id), { deletedAt: null, updatedAt }).catch(reportWriteError)
   },
 
   async permanentDelete(id: string): Promise<void> {
-    await deleteDoc(doc(articlesCol(), id))
-    set((state) => ({ all: state.all.filter((a) => a.id !== id) }))
+    const next = get().all.filter((a) => a.id !== id)
+    set({ all: next })
+    persist(next)
+
+    deleteDoc(doc(articlesCol(), id)).catch(reportWriteError)
   },
 }))
+
+/** 現在の記事一覧をローカル（localStorage）へ保存する */
+function persist(articles: Article[]): void {
+  const userId = currentUserId()
+  if (userId) saveLocalArticles(userId, articles)
+}

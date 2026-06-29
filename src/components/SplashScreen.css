@@ -1,0 +1,58 @@
+/* 起動時のスプラッシュ画面 */
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  background: var(--app-bg-soft);
+  /* フェードイン表示 */
+  animation: splash-fade-in 0.3s ease;
+}
+
+/* 回転するリング本体 */
+.splash-ring {
+  width: 56px;
+  height: 56px;
+  border: 4px solid var(--app-border);
+  /* アクセントカラーの一部だけ色を付けることで、回転が見えるようにする */
+  border-top-color: var(--app-accent);
+  border-radius: 50%;
+  animation: splash-ring-spin 0.9s linear infinite;
+}
+
+/* アプリ名のラベル */
+.splash-label {
+  color: var(--app-text-secondary);
+  font-size: 14px;
+  letter-spacing: 0.05em;
+}
+
+@keyframes splash-ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes splash-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* アニメーションを抑制する設定のユーザー向けに、回転を停止する */
+@media (prefers-reduced-motion: reduce) {
+  .splash-screen {
+    animation: none;
+  }
+
+  .splash-ring {
+    animation-duration: 2.4s;
+  }
+}

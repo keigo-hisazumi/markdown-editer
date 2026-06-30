@@ -176,17 +176,21 @@ export default function ArticleView() {
     setIsDirty(true)
   }
 
-  // タイトルで Enter を押したら本文へフォーカスを移す
+  // タイトルで Enter を押したら本文へフォーカスを移す。
+  // ただし IME 変換確定の Enter（isComposing 中）はタイトルの確定のための操作なので、
+  // 本文へのフォーカス移動を行わない。これを行うとタイトル入力中に本文へ
+  // カーソルが移り、続きのタイトルが本文に入力されてしまう。
   function onTitleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault()
       textareaRef.current?.focus()
     }
   }
 
-  // 本文の先頭で Backspace を押したらタイトル末尾へフォーカスを戻す
+  // 本文の先頭で Backspace を押したらタイトル末尾へフォーカスを戻す。
+  // IME 変換中の Backspace は変換候補の操作なのでフォーカス移動はしない。
   function onContentKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Backspace') {
+    if (e.key === 'Backspace' && !e.nativeEvent.isComposing) {
       const el = e.currentTarget
       if (el.selectionStart === 0 && el.selectionEnd === 0) {
         e.preventDefault()

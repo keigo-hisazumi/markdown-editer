@@ -18,6 +18,10 @@ import './ArticleView.css'
 
 type ViewMode = 'all' | 'draft' | 'published' | 'trash'
 
+// サーバー（Firestore）への定期同期の間隔（ミリ秒）。
+// 編集内容はローカルへ即時保存され、この間隔ごとにサーバーへも反映される。
+const SERVER_SYNC_INTERVAL_MS = 5000
+
 function previewText(c: string): string {
   return c.replace(/[#*`>_[\]]/g, '').slice(0, 80).trim()
 }
@@ -136,6 +140,19 @@ export default function ArticleView() {
     }
   }, [])
 
+  // 一定間隔でサーバー（Firestore）へ同期する。
+  // 編集内容はローカルへ即時保存されているため、ここでは未同期の変更があるときだけ送信する。
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const latest = latestRef.current
+      if (!latest.isDirty || !latest.selectedId) return
+      // 先に未同期フラグを下ろし、同期中の入力は次回の同期で拾えるようにする
+      setIsDirty(false)
+      useArticlesStore.getState().syncToServer(latest.selectedId)
+    }, SERVER_SYNC_INTERVAL_MS)
+    return () => clearInterval(timer)
+  }, [])
+
   // タイトル・本文の textarea を内容に合わせて自動リサイズ
   useLayoutEffect(() => {
     const el = titleRef.current
@@ -167,13 +184,19 @@ export default function ArticleView() {
   }
 
   function onTitleInput(e: ChangeEvent<HTMLTextAreaElement>) {
-    setTitle(e.target.value)
+    const value = e.target.value
+    setTitle(value)
     setIsDirty(true)
+    // 編集内容をローカルへリアルタイムに保存する（サーバーへは定期的に同期）
+    if (selectedId) articlesStore.saveLocal(selectedId, value, content)
   }
 
   function onContentInput(e: ChangeEvent<HTMLTextAreaElement>) {
-    setContent(e.target.value)
+    const value = e.target.value
+    setContent(value)
     setIsDirty(true)
+    // 編集内容をローカルへリアルタイムに保存する（サーバーへは定期的に同期）
+    if (selectedId) articlesStore.saveLocal(selectedId, title, value)
   }
 
   // タイトルで Enter を押したら本文へフォーカスを移す。

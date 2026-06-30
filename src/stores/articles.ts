@@ -34,6 +34,11 @@ interface ArticlesState {
   /** リアルタイム購読を解除し、状態を初期化する */
   unsubscribe: () => void
   getById: (id: string) => Article | undefined
+  /** ローカル（localStorage）のみへ即時保存する。サーバーへは送信しない */
+  saveLocal: (id: string, title: string, content: string) => void
+  /** 指定記事の現在の内容をサーバー（Firestore）へ送信する */
+  syncToServer: (id: string) => Promise<void>
+  /** ローカルとサーバーの両方へ保存する（保存ボタン用の強制保存） */
   save: (id: string, title: string, content: string) => Promise<void>
   createArticle: () => Promise<Article>
   updateStatus: (id: string, status: ArticleStatus) => Promise<void>
@@ -127,21 +132,29 @@ export const useArticlesStore = create<ArticlesState>((set, get) => ({
     return get().all.find((a) => a.id === id)
   },
 
-  async save(id: string, title: string, content: string): Promise<void> {
+  saveLocal(id: string, title: string, content: string): void {
     const updatedAt = new Date().toISOString()
     const status = get().all.find((a) => a.id === id)?.status ?? 'draft'
     const updated: Partial<Article> = { title, content, updatedAt, status, deletedAt: null }
 
-    // ローカルを先に更新し、オフラインでも保存できるようにする
+    // ローカル（localStorage）のみを即時更新する。編集のたびに呼ばれ、
+    // オフラインでも入力内容が失われないようにする。サーバーへは送信しない。
     const next = get().all.map((a) => (a.id === id ? { ...a, ...updated } : a))
     set({ all: next })
     persist(next)
+  },
 
-    // リモートへは保留可能な書き込みとして送る（オフライン時は再接続時に送信される）
-    const article = next.find((a) => a.id === id)
-    if (article) {
-      setDoc(doc(articlesCol(), id), toDocData(article)).catch(reportWriteError)
-    }
+  async syncToServer(id: string): Promise<void> {
+    // ストア上の最新内容をリモートへ送る（オフライン時は再接続時に送信される）
+    const article = get().all.find((a) => a.id === id)
+    if (!article) return
+    await setDoc(doc(articlesCol(), id), toDocData(article)).catch(reportWriteError)
+  },
+
+  async save(id: string, title: string, content: string): Promise<void> {
+    // 保存ボタン用の強制保存。ローカルへ即時保存したうえでサーバーへも送信する。
+    get().saveLocal(id, title, content)
+    await get().syncToServer(id)
   },
 
   async createArticle(): Promise<Article> {

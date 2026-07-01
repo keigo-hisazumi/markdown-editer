@@ -87,16 +87,36 @@ export default function ArticleView() {
     [content],
   )
 
-  // 記事の切り替え時にエディタへ内容を読み込む
+  // 記事の切り替え時にエディタへ内容を読み込む。
+  // 選択中の記事が変わっていない場合でも、他デバイスでの更新がサーバーから
+  // 届いて all が変化したときは、編集中でなければエディタへ反映する。
+  const prevSelectedIdRef = useRef<string | undefined>(undefined)
   useEffect(() => {
-    if (!selectedId) return
-    const article = useArticlesStore.getState().getById(selectedId)
+    if (!selectedId) {
+      prevSelectedIdRef.current = undefined
+      return
+    }
+    const article = all.find((a) => a.id === selectedId)
     if (!article) return
-    setTitle(article.title)
-    setContent(article.content)
-    setIsDirty(false)
-    setIsPreview(false)
-  }, [selectedId])
+
+    const isNewSelection = prevSelectedIdRef.current !== selectedId
+    prevSelectedIdRef.current = selectedId
+
+    if (isNewSelection) {
+      setTitle(article.title)
+      setContent(article.content)
+      setIsDirty(false)
+      setIsPreview(false)
+      return
+    }
+
+    // 編集中に他デバイスの更新で上書きしないよう、未編集のときだけ反映する
+    if (!isDirty && (article.title !== title || article.content !== content)) {
+      setTitle(article.title)
+      setContent(article.content)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, all, isDirty])
 
   useEffect(() => {
     // Firestore のリアルタイム購読を開始し、デバイス間で記事を同期する

@@ -18,9 +18,11 @@ import './ArticleView.css'
 
 type ViewMode = 'all' | 'draft' | 'published' | 'trash'
 
-// サーバー（Firestore）への定期同期の間隔（ミリ秒）。
-// 編集内容はローカルへ即時保存され、この間隔ごとにサーバーへも反映される。
-const SERVER_SYNC_INTERVAL_MS = 5000
+// サーバー（Firestore）への同期のデバウンス時間（ミリ秒）。
+// 編集内容はローカルへ即時保存され、この時間キー入力が止まるとサーバーへも反映される。
+// 1 打鍵ごとに書き込むとネットワーク遅延で更新が前後する可能性があるため、
+// ローカルと同様「リアルタイム」に見える範囲で短い時間だけデバウンスする。
+const SERVER_SYNC_DEBOUNCE_MS = 400
 
 function previewText(c: string): string {
   return c.replace(/[#*`>_[\]]/g, '').slice(0, 80).trim()
@@ -153,6 +155,7 @@ export default function ArticleView() {
   })
   useEffect(() => {
     return () => {
+      clearPendingServerSync()
       const latest = latestRef.current
       if (latest.isDirty && latest.selectedId) {
         useArticlesStore.getState().save(latest.selectedId, latest.title, latest.content)
@@ -160,18 +163,25 @@ export default function ArticleView() {
     }
   }, [])
 
-  // 一定間隔でサーバー（Firestore）へ同期する。
-  // 編集内容はローカルへ即時保存されているため、ここでは未同期の変更があるときだけ送信する。
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const latest = latestRef.current
-      if (!latest.isDirty || !latest.selectedId) return
-      // 先に未同期フラグを下ろし、同期中の入力は次回の同期で拾えるようにする
+  // キー入力が SERVER_SYNC_DEBOUNCE_MS 止まったらサーバー（Firestore）へ同期する。
+  // ローカルと同様、入力のたびに（少し遅れて）サーバーへも反映されるようにする。
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function clearPendingServerSync(): void {
+    if (syncTimerRef.current) {
+      clearTimeout(syncTimerRef.current)
+      syncTimerRef.current = null
+    }
+  }
+
+  function scheduleServerSync(id: string): void {
+    clearPendingServerSync()
+    syncTimerRef.current = setTimeout(() => {
+      syncTimerRef.current = null
       setIsDirty(false)
-      useArticlesStore.getState().syncToServer(latest.selectedId)
-    }, SERVER_SYNC_INTERVAL_MS)
-    return () => clearInterval(timer)
-  }, [])
+      useArticlesStore.getState().syncToServer(id)
+    }, SERVER_SYNC_DEBOUNCE_MS)
+  }
 
   // タイトル・本文の textarea を内容に合わせて自動リサイズ
   useLayoutEffect(() => {
@@ -190,6 +200,7 @@ export default function ArticleView() {
 
   async function saveArticle() {
     if (!selectedId) return
+    clearPendingServerSync()
     await articlesStore.save(selectedId, title, content)
     setIsDirty(false)
   }
@@ -207,16 +218,22 @@ export default function ArticleView() {
     const value = e.target.value
     setTitle(value)
     setIsDirty(true)
-    // 編集内容をローカルへリアルタイムに保存する（サーバーへは定期的に同期）
-    if (selectedId) articlesStore.saveLocal(selectedId, value, content)
+    // 編集内容をローカルへリアルタイムに保存し、サーバーへもすぐに同期する
+    if (selectedId) {
+      articlesStore.saveLocal(selectedId, value, content)
+      scheduleServerSync(selectedId)
+    }
   }
 
   function onContentInput(e: ChangeEvent<HTMLTextAreaElement>) {
     const value = e.target.value
     setContent(value)
     setIsDirty(true)
-    // 編集内容をローカルへリアルタイムに保存する（サーバーへは定期的に同期）
-    if (selectedId) articlesStore.saveLocal(selectedId, title, value)
+    // 編集内容をローカルへリアルタイムに保存し、サーバーへもすぐに同期する
+    if (selectedId) {
+      articlesStore.saveLocal(selectedId, title, value)
+      scheduleServerSync(selectedId)
+    }
   }
 
   // タイトルで Enter を押したら本文へフォーカスを移す。

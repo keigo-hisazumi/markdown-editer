@@ -62,6 +62,7 @@ export default function ArticleView() {
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const titleRef = useRef<HTMLTextAreaElement | null>(null)
+  const editorScrollRef = useRef<HTMLDivElement | null>(null)
   const suppressClickRef = useRef(0)
 
   const isMobile = windowWidth < 768
@@ -183,19 +184,29 @@ export default function ArticleView() {
     }, SERVER_SYNC_DEBOUNCE_MS)
   }
 
-  // タイトル・本文の textarea を内容に合わせて自動リサイズ
+  // タイトル・本文の textarea を内容に合わせて自動リサイズ。
+  // 一旦 height を 'auto' に戻してから scrollHeight を測るため、その間だけ
+  // 高さが縮み、外側の .editor-scroll のスクロール位置がずれてしまう。
+  // 編集中のカーソル位置が画面上で動いて見えないよう、リサイズ前後で
+  // スクロール位置を保持し直す。
   useLayoutEffect(() => {
     const el = titleRef.current
     if (!el) return
+    const scrollEl = editorScrollRef.current
+    const prevScrollTop = scrollEl?.scrollTop
     el.style.height = 'auto'
     el.style.height = el.scrollHeight + 'px'
+    if (scrollEl && prevScrollTop !== undefined) scrollEl.scrollTop = prevScrollTop
   }, [title, isPreview, selectedId])
 
   useLayoutEffect(() => {
     const el = textareaRef.current
     if (!el) return
+    const scrollEl = editorScrollRef.current
+    const prevScrollTop = scrollEl?.scrollTop
     el.style.height = 'auto'
     el.style.height = el.scrollHeight + 'px'
+    if (scrollEl && prevScrollTop !== undefined) scrollEl.scrollTop = prevScrollTop
   }, [content, isPreview, selectedId])
 
   async function saveArticle() {
@@ -634,7 +645,7 @@ export default function ArticleView() {
             </div>
           </div>
         ) : (
-          <div className="editor-scroll">
+          <div className="editor-scroll" ref={editorScrollRef}>
             <textarea
               ref={titleRef}
               value={title}

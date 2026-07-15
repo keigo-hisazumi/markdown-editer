@@ -160,8 +160,8 @@ export const useArticlesStore = create<ArticlesState>((set, get) => ({
   async createArticle(): Promise<Article> {
     const newArticle: Article = {
       id: String(Date.now()),
-      title: '新しい記事',
-      content: '# 新しい記事\n\nここに内容を書いてください。\n',
+      title: '',
+      content: '',
       updatedAt: new Date().toISOString(),
       status: 'draft',
       deletedAt: null,

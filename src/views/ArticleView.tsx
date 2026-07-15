@@ -64,6 +64,7 @@ export default function ArticleView() {
   const titleRef = useRef<HTMLTextAreaElement | null>(null)
   const editorScrollRef = useRef<HTMLDivElement | null>(null)
   const suppressClickRef = useRef(0)
+  const focusContentOnNextSelectionRef = useRef(false)
 
   const isMobile = windowWidth < 768
   const selectedId = searchParams.get('id') ?? undefined
@@ -110,6 +111,10 @@ export default function ArticleView() {
       setContent(article.content)
       setIsDirty(false)
       setIsPreview(false)
+      if (focusContentOnNextSelectionRef.current) {
+        focusContentOnNextSelectionRef.current = false
+        setTimeout(() => textareaRef.current?.focus(), 0)
+      }
       return
     }
 
@@ -323,6 +328,7 @@ export default function ArticleView() {
   async function handleCreate() {
     if (isDirty && selectedId) await saveArticle()
     const article = await articlesStore.createArticle()
+    focusContentOnNextSelectionRef.current = true
     setSearchParams({ id: article.id })
   }
 

@@ -95,6 +95,9 @@
 
 .btn-compose:hover { background: var(--app-menu-hover); }
 
+.btn-empty-trash { color: #ef4444; }
+.btn-empty-trash:hover { background: rgba(239, 68, 68, 0.12); }
+
 .trash-badge {
   display: inline-flex;
   align-items: center;

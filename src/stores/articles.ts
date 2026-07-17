@@ -45,6 +45,8 @@ interface ArticlesState {
   trash: (id: string) => Promise<void>
   restore: (id: string) => Promise<void>
   permanentDelete: (id: string) => Promise<void>
+  /** ゴミ箱内の記事をすべて完全に削除する */
+  emptyTrash: () => Promise<void>
 }
 
 function currentUserId(): string | null {
@@ -210,6 +212,19 @@ export const useArticlesStore = create<ArticlesState>((set, get) => ({
     persist(next)
 
     deleteDoc(doc(articlesCol(), id)).catch(reportWriteError)
+  },
+
+  async emptyTrash(): Promise<void> {
+    const trashedIds = get().all.filter((a) => !!a.deletedAt).map((a) => a.id)
+    if (trashedIds.length === 0) return
+
+    const next = get().all.filter((a) => !a.deletedAt)
+    set({ all: next })
+    persist(next)
+
+    for (const id of trashedIds) {
+      deleteDoc(doc(articlesCol(), id)).catch(reportWriteError)
+    }
   },
 }))
 

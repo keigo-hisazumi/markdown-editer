@@ -86,6 +86,17 @@ function toDocData(article: Article): Omit<Article, 'id'> {
 let unsub: Unsubscribe | null = null
 
 /**
+ * このセッションで完全削除（deleteDoc）を実行した記事 ID。
+ * deleteDoc は非同期で、複数件をまとめて削除する際は個々の削除が
+ * リアルタイム購読のスナップショットへ反映されるタイミングがずれる。
+ * その間に届いたスナップショットにはまだ削除されていない記事が
+ * 含まれてしまい、mergeArticles がローカルの削除を「リモートの方が
+ * 正」として復活させてしまう。これを防ぐため、削除済み ID は
+ * スナップショットのマージ対象から常に除外する。
+ */
+const pendingDeletedIds = new Set<string>()
+
+/**
  * Firestore への書き込みエラーを処理する。
  * オフライン時は書き込みが保留されるだけで失敗しないため、
  * ここに到達するのは権限エラーなど。UI は止めず警告のみ出す。
@@ -109,7 +120,9 @@ export const useArticlesStore = create<ArticlesState>((set, get) => ({
     // ローカルと更新日時で比較してマージし、デバイス間で記事を同期する。
     const q = query(articlesCol(), orderBy('updatedAt', 'desc'))
     unsub = onSnapshot(q, (snap) => {
-      const remote = snap.docs.map((d) => toArticle(d.id, d.data() as Omit<Article, 'id'>))
+      const remote = snap.docs
+        .map((d) => toArticle(d.id, d.data() as Omit<Article, 'id'>))
+        .filter((a) => !pendingDeletedIds.has(a.id))
       const { merged, toPush } = mergeArticles(get().all, remote)
 
       set({ all: merged })
@@ -207,6 +220,7 @@ export const useArticlesStore = create<ArticlesState>((set, get) => ({
   },
 
   async permanentDelete(id: string): Promise<void> {
+    pendingDeletedIds.add(id)
     const next = get().all.filter((a) => a.id !== id)
     set({ all: next })
     persist(next)
@@ -218,6 +232,7 @@ export const useArticlesStore = create<ArticlesState>((set, get) => ({
     const trashedIds = get().all.filter((a) => !!a.deletedAt).map((a) => a.id)
     if (trashedIds.length === 0) return
 
+    for (const id of trashedIds) pendingDeletedIds.add(id)
     const next = get().all.filter((a) => !a.deletedAt)
     set({ all: next })
     persist(next)

@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Markdown Editor アイコン</title>
+  <desc id="desc">Markdown 文書、リアルタイムプレビュー、編集ペンを組み合わせたアイコン</desc>
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" />
+      <stop offset="1" stop-color="#eef2ff" />
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#1a1a2e" flood-opacity="0.28" />
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="#667eea" />
+
+  <g opacity="0.18" fill="none" stroke="#ffffff" stroke-width="16" stroke-linecap="round">
+    <path d="M74 150h124" />
+    <path d="M314 112h124" />
+    <path d="M366 410h72" />
+  </g>
+
+  <g filter="url(#softShadow)">
+    <path d="M132 82h188l72 72v276H132z" fill="url(#paper)" />
+    <path d="M320 82v72h72" fill="#c7d2fe" />
+    <path d="M132 82h188l72 72v276H132z" fill="none" stroke="#ffffff" stroke-width="10" stroke-linejoin="round" />
+  </g>
+
+  <g fill="#4f46e5">
+    <path d="M168 206h40l48 64 48-64h40v128h-42v-66l-38 50h-16l-38-50v66h-42z" />
+    <path d="M266 360l58-58 32 32-58 58-42 10z" />
+    <path d="M365 325l-32-32 18-18c9-9 23-9 32 0s9 23 0 32z" />
+  </g>
+
+  <g fill="none" stroke="#94a3b8" stroke-width="14" stroke-linecap="round">
+    <path d="M170 168h94" />
+    <path d="M170 382h62" />
+  </g>
+</svg>

@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "firebase": "^12.19.0",
-    "marked": "^18.0.12",
+    "marked": "^18.0.13",
     "react": "^19.2.7",
     "react-dom": "^19.3.0",
     "react-router-dom": "^7.18.3",

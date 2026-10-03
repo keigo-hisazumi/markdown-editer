@@ -6,6 +6,13 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 const base = process.env.VITE_BASE_PATH ?? '/'
 
+// PR プレビューはすべて同一オリジン（/markdown-editer/ 配下）に配信されるため、
+// Service Worker を有効にすると本番用 SW（スコープ /markdown-editer/）がプレビューの
+// ナビゲーションを横取りし、本番の画面が表示されてしまう。プレビュービルドでは
+// 自己破棄する SW を生成して登録済み SW・キャッシュを掃除し、本番 SW 側では
+// プレビューパスをナビゲーションフォールバックの対象外にすることで競合を防ぐ。
+const disablePWA = process.env.VITE_DISABLE_PWA === 'true'
+
 const buildDate = new Date().toLocaleString('ja-JP', {
   timeZone: 'Asia/Tokyo',
   year: 'numeric',
@@ -23,7 +30,13 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      selfDestroying: disablePWA,
       registerType: 'autoUpdate',
+      workbox: {
+        // 本番 SW（スコープ /markdown-editer/）が PR プレビュー（/markdown-editer/pr-N/）への
+        // ナビゲーションを本番のアプリシェルで肩代わりしないようにする。
+        navigateFallbackDenylist: [/^\/markdown-editer\/pr-\d+\//],
+      },
       manifest: {
         name: 'Markdown Editor',
         short_name: 'MDEditor',

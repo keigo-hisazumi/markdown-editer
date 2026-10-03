@@ -45,6 +45,14 @@ npm run dev
 npm run build
 ```
 
+### Firestore セキュリティルール
+
+Firestore のセキュリティルールは `firestore.rules` で管理しています（`users/{userId}/articles/{articleId}` を本人のみ読み書き可）。Firebase CLI で反映できます。
+
+```sh
+firebase deploy --only firestore:rules --project markdown-editer
+```
+
 ## 今後の予定
 
 - 記事のタグ・カテゴリー管理

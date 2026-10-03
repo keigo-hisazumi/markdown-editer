@@ -20,9 +20,11 @@ permissions:
   contents: write
   pull-requests: write
 
+# 本番デプロイ（deploy.yml）と同じ group で直列化し、gh-pages への
+# 同時 push による競合（pr-* プレビューの消失）を防ぐ。
 concurrency:
-  group: pr-preview-${{ github.event.number }}
-  cancel-in-progress: true
+  group: gh-pages-deploy
+  cancel-in-progress: false
 
 jobs:
   deploy-preview:
@@ -46,6 +48,9 @@ jobs:
         env:
           VITE_BASE_PATH: /${{ github.event.repository.name }}/pr-${{ github.event.number }}/
           VITE_APP_ENV: preview
+          # プレビューでは自己破棄する SW を生成し、本番 SW との競合や
+          # プレビュー同士のキャッシュ混在を防ぐ
+          VITE_DISABLE_PWA: 'true'
         run: npm run build
 
       - name: gh-pages への PR プレビューのデプロイ

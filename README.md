@@ -13,7 +13,7 @@ Markdown 形式で記事を編集するためのブラウザベースエディ�
 
 ## デモ用ログイン情報
 
-```
+```text
 メールアドレス: demo@example.com
 パスワード: password
 ```

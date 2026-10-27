@@ -29,6 +29,18 @@ export function resolveInitialTheme(): boolean {
 export function applyTheme(isDark: boolean): void {
   document.documentElement.classList.toggle('dark', isDark)
   document.documentElement.classList.toggle('light', !isDark)
+  syncThemeColor()
+}
+
+/**
+ * meta[name="theme-color"] をヘッダーの背景色に合わせる。
+ * ブラウザやホーム画面アプリのステータスバー（ヘッダーの上）がヘッダーと同じ色になる。
+ */
+function syncThemeColor(): void {
+  const meta = document.querySelector('meta[name="theme-color"]')
+  if (!meta) return
+  const color = getComputedStyle(document.documentElement).getPropertyValue('--app-header-bg').trim()
+  if (color) meta.setAttribute('content', color)
 }
 
 /** トランジション付きでテーマを適用する（ユーザー操作時に使用） */

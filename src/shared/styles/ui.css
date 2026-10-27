@@ -12,7 +12,10 @@
   height: 100svh;
   height: var(--app-height, 100svh);
   overflow: hidden;
-  background: var(--app-bg);
+  /* iOS の PWA では画面上端に固定された要素の背景色がステータスバーの色になる。
+     モバイルでは .split-app 自体が上端に固定されるため、ヘッダーと同じ色にしておき、
+     本文側の背景は .split-sidebar / .split-main で塗る */
+  background: var(--app-header-bg);
 }
 
 .split-sidebar {
@@ -22,6 +25,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: var(--app-bg);
 }
 
 .split-sidebar--full {
@@ -35,6 +39,7 @@
   flex-direction: column;
   overflow: hidden;
   min-width: 0;
+  background: var(--app-bg);
 }
 
 @media (max-width: 767px) {

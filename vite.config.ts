@@ -41,7 +41,7 @@ export default defineConfig({
         name: 'Markdown Editor',
         short_name: 'MDEditor',
         description: 'Markdown形式で記事を編集するエディター',
-        theme_color: '#667eea',
+        theme_color: '#eef2ff',
         background_color: '#ffffff',
         display: 'standalone',
         start_url: base,

@@ -1,12 +1,4 @@
-import {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ChangeEvent,
-  type KeyboardEvent,
-} from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { marked } from 'marked'
 import { useArticlesStore } from '@/stores/articles'
@@ -14,9 +6,35 @@ import type { ArticleStatus } from '@/stores/articles'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import ArticleListItem from '@/components/ArticleListItem'
+import AppHeader from '@/shared/components/AppHeader'
+import DrawerMenu from '@/shared/components/DrawerMenu'
+import EditorNav from '@/shared/components/EditorNav'
+import EmptyState from '@/shared/components/EmptyState'
+import IconButton from '@/shared/components/IconButton'
+import NoSelection from '@/shared/components/NoSelection'
+import SaveStatus from '@/shared/components/SaveStatus'
+import SearchBar from '@/shared/components/SearchBar'
+import { SwipeableList } from '@/shared/components/SwipeableList'
+import { TrashListItem, TrashToolbar } from '@/shared/components/Trash'
+import { MenuDivider, MenuItem, Popover } from '@/shared/components/Popover'
+import { ComposeIcon, MoreIcon, TrashIcon } from '@/shared/components/Icons'
+import { useAutoResize } from '@/shared/hooks/useAutoResize'
+import { useDebouncedTask } from '@/shared/hooks/useDebouncedTask'
+import { useDocumentClick } from '@/shared/hooks/useDocumentClick'
+import { useIsMobile } from '@/shared/hooks/useIsMobile'
+import { useTitleBodyKeys } from '@/shared/hooks/useTitleBodyKeys'
+import { useVisualViewport } from '@/shared/hooks/useVisualViewport'
+import { confirmEmptyTrash, confirmPermanentDelete } from '@/shared/lib/confirm'
 import './ArticleView.css'
 
 type ViewMode = 'all' | 'draft' | 'published' | 'trash'
+
+const VIEW_TITLES: Record<ViewMode, string> = {
+  all: 'すべての記事',
+  draft: '作成中',
+  published: '投稿済み',
+  trash: 'ゴミ箱',
+}
 
 // サーバー（Firestore）への同期のデバウンス時間（ミリ秒）。
 // 編集内容はローカルへ即時保存され、この時間キー入力が止まるとサーバーへも反映される。
@@ -24,15 +42,52 @@ type ViewMode = 'all' | 'draft' | 'published' | 'trash'
 // ローカルと同様「リアルタイム」に見える範囲で短い時間だけデバウンスする。
 const SERVER_SYNC_DEBOUNCE_MS = 400
 
-function previewText(c: string): string {
-  return c.replace(/[#*`>_[\]]/g, '').slice(0, 80).trim()
+function ListIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+      <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+    </svg>
+  )
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString('ja-JP', {
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit',
-  })
+function PenIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+    </svg>
+  )
+}
+
+function CheckCircleIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+      <polyline points="22 4 12 14.01 9 11.01"/>
+    </svg>
+  )
+}
+
+function SaveIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+      <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+    </svg>
+  )
+}
+
+function EyeIcon({ off }: { off: boolean }) {
+  return off ? (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>
+    </svg>
+  ) : (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+    </svg>
+  )
 }
 
 export default function ArticleView() {
@@ -48,25 +103,28 @@ export default function ArticleView() {
   const logout = useAuthStore((s) => s.logout)
   const isDark = useThemeStore((s) => s.isDark)
   const toggleTheme = useThemeStore((s) => s.toggleTheme)
+  const isMobile = useIsMobile()
+  useVisualViewport()
 
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [isDirty, setIsDirty] = useState(false)
   const [isPreview, setIsPreview] = useState(false)
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth)
   const [viewMode, setViewMode] = useState<ViewMode>('all')
-  const [openSwipeId, setOpenSwipeId] = useState<string | null>(null)
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const titleRef = useRef<HTMLTextAreaElement | null>(null)
   const editorScrollRef = useRef<HTMLDivElement | null>(null)
-  const suppressClickRef = useRef(0)
   const focusContentOnNextSelectionRef = useRef(false)
+  const { onTitleKeyDown, onBodyKeyDown } = useTitleBodyKeys(titleRef, textareaRef)
 
-  const isMobile = windowWidth < 768
+  // キー入力が SERVER_SYNC_DEBOUNCE_MS 止まったらサーバー（Firestore）へ同期する。
+  // ローカルと同様、入力のたびに（少し遅れて）サーバーへも反映されるようにする。
+  // アンマウント時には予約済みの同期を必ず実行する。
+  const serverSync = useDebouncedTask(SERVER_SYNC_DEBOUNCE_MS)
+
   const selectedId = searchParams.get('id') ?? undefined
   const showEditor = !!selectedId
 
@@ -90,6 +148,8 @@ export default function ArticleView() {
     () => marked.parse(content, { async: false }),
     [content],
   )
+
+  useDocumentClick(() => setMenuOpen(false))
 
   // 記事の切り替え時にエディタへ内容を読み込む。
   // 選択中の記事が変わっていない場合でも、他デバイスでの更新がサーバーから
@@ -129,101 +189,30 @@ export default function ArticleView() {
   useEffect(() => {
     // Firestore のリアルタイム購読を開始し、デバイス間で記事を同期する
     articlesStore.subscribe()
-    const onResize = () => setWindowWidth(window.innerWidth)
-    const closeMenu = () => setMenuOpen(false)
-    window.addEventListener('resize', onResize)
-    document.addEventListener('click', closeMenu)
-    return () => {
-      articlesStore.unsubscribe()
-      window.removeEventListener('resize', onResize)
-      document.removeEventListener('click', closeMenu)
-    }
+    return () => articlesStore.unsubscribe()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // スワイプで開いた削除ボタンを、外側のタップで閉じる
-  useEffect(() => {
-    if (openSwipeId === null) return
-    function onDocPointerDown(e: globalThis.PointerEvent) {
-      const target = e.target as HTMLElement | null
-      if (target?.closest('.article-item-delete')) return
-      suppressClickRef.current = Date.now()
-      setOpenSwipeId(null)
-    }
-    document.addEventListener('pointerdown', onDocPointerDown)
-    return () => document.removeEventListener('pointerdown', onDocPointerDown)
-  }, [openSwipeId])
-
-  // アンマウント時に未保存の変更を保存する
-  const latestRef = useRef({ isDirty, selectedId, title, content })
-  useEffect(() => {
-    latestRef.current = { isDirty, selectedId, title, content }
-  })
-  useEffect(() => {
-    return () => {
-      clearPendingServerSync()
-      const latest = latestRef.current
-      if (latest.isDirty && latest.selectedId) {
-        useArticlesStore.getState().save(latest.selectedId, latest.title, latest.content)
-      }
-    }
-  }, [])
-
-  // キー入力が SERVER_SYNC_DEBOUNCE_MS 止まったらサーバー（Firestore）へ同期する。
-  // ローカルと同様、入力のたびに（少し遅れて）サーバーへも反映されるようにする。
-  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  function clearPendingServerSync(): void {
-    if (syncTimerRef.current) {
-      clearTimeout(syncTimerRef.current)
-      syncTimerRef.current = null
-    }
-  }
+  // タイトル・本文の textarea を内容に合わせて自動リサイズする
+  useAutoResize(titleRef, editorScrollRef, [title, isPreview, selectedId])
+  useAutoResize(textareaRef, editorScrollRef, [content, isPreview, selectedId])
 
   function scheduleServerSync(id: string): void {
-    clearPendingServerSync()
-    syncTimerRef.current = setTimeout(() => {
-      syncTimerRef.current = null
+    serverSync.schedule(() => {
       setIsDirty(false)
       useArticlesStore.getState().syncToServer(id)
-    }, SERVER_SYNC_DEBOUNCE_MS)
+    })
   }
-
-  // タイトル・本文の textarea を内容に合わせて自動リサイズ。
-  // 一旦 height を 'auto' に戻してから scrollHeight を測るため、その間だけ
-  // 高さが縮み、外側の .editor-scroll のスクロール位置がずれてしまう。
-  // 編集中のカーソル位置が画面上で動いて見えないよう、リサイズ前後で
-  // スクロール位置を保持し直す。
-  useLayoutEffect(() => {
-    const el = titleRef.current
-    if (!el) return
-    const scrollEl = editorScrollRef.current
-    const prevScrollTop = scrollEl?.scrollTop
-    el.style.height = 'auto'
-    el.style.height = el.scrollHeight + 'px'
-    if (scrollEl && prevScrollTop !== undefined) scrollEl.scrollTop = prevScrollTop
-  }, [title, isPreview, selectedId])
-
-  useLayoutEffect(() => {
-    const el = textareaRef.current
-    if (!el) return
-    const scrollEl = editorScrollRef.current
-    const prevScrollTop = scrollEl?.scrollTop
-    el.style.height = 'auto'
-    el.style.height = el.scrollHeight + 'px'
-    if (scrollEl && prevScrollTop !== undefined) scrollEl.scrollTop = prevScrollTop
-  }, [content, isPreview, selectedId])
 
   async function saveArticle() {
     if (!selectedId) return
-    clearPendingServerSync()
+    serverSync.cancel()
     await articlesStore.save(selectedId, title, content)
     setIsDirty(false)
   }
 
   function handleViewMode(mode: ViewMode) {
     setViewMode(mode)
-    setIsDrawerOpen(false)
     if (selectedId) {
       if (isDirty) saveArticle()
       setSearchParams({})
@@ -231,7 +220,8 @@ export default function ArticleView() {
   }
 
   function onTitleInput(e: ChangeEvent<HTMLTextAreaElement>) {
-    const value = e.target.value
+    // タイトルは 1 行として扱う（貼り付けた改行は空白にする）
+    const value = e.target.value.replace(/\r?\n/g, ' ')
     setTitle(value)
     setIsDirty(true)
     // 編集内容をローカルへリアルタイムに保存し、サーバーへもすぐに同期する
@@ -249,31 +239,6 @@ export default function ArticleView() {
     if (selectedId) {
       articlesStore.saveLocal(selectedId, title, value)
       scheduleServerSync(selectedId)
-    }
-  }
-
-  // タイトルで Enter を押したら本文へフォーカスを移す。
-  // ただし IME 変換確定の Enter（isComposing 中）はタイトルの確定のための操作なので、
-  // 本文へのフォーカス移動を行わない。これを行うとタイトル入力中に本文へ
-  // カーソルが移り、続きのタイトルが本文に入力されてしまう。
-  function onTitleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-      e.preventDefault()
-      textareaRef.current?.focus()
-    }
-  }
-
-  // 本文の先頭で Backspace を押したらタイトル末尾へフォーカスを戻す。
-  // IME 変換中の Backspace は変換候補の操作なのでフォーカス移動はしない。
-  function onContentKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Backspace' && !e.nativeEvent.isComposing) {
-      const el = e.currentTarget
-      if (el.selectionStart === 0 && el.selectionEnd === 0) {
-        e.preventDefault()
-        const end = title.length
-        titleRef.current?.focus()
-        setTimeout(() => titleRef.current?.setSelectionRange(end, end), 0)
-      }
     }
   }
 
@@ -305,24 +270,19 @@ export default function ArticleView() {
 
   // 一覧のスワイプ操作からゴミ箱へ移動する
   async function handleListTrash(id: string) {
-    setOpenSwipeId(null)
     if (isDirty && selectedId === id) await saveArticle()
     await articlesStore.trash(id)
     if (selectedId === id) setSearchParams({})
   }
 
-  async function handleRestore(id: string) {
-    await articlesStore.restore(id)
-  }
-
   async function handlePermanentDelete(id: string) {
-    if (!confirm('この記事を完全に削除しますか？この操作は取り消せません。')) return
+    if (!confirmPermanentDelete('記事')) return
     await articlesStore.permanentDelete(id)
   }
 
   async function handleEmptyTrash() {
     if (trashedArticles.length === 0) return
-    if (!confirm(`ゴミ箱内の${trashedArticles.length}件の記事を完全に削除しますか？この操作は取り消せません。`)) return
+    if (!confirmEmptyTrash('記事', trashedArticles.length)) return
     await articlesStore.emptyTrash()
   }
 
@@ -333,6 +293,8 @@ export default function ArticleView() {
 
   async function handleCreate() {
     if (isDirty && selectedId) await saveArticle()
+    // ゴミ箱・投稿済みを表示中に新規作成した場合は、作成した記事（作成中）が見える一覧へ切り替える
+    if (viewMode === 'trash' || viewMode === 'published') setViewMode('all')
     const article = await articlesStore.createArticle()
     focusContentOnNextSelectionRef.current = true
     setSearchParams({ id: article.id })
@@ -344,331 +306,122 @@ export default function ArticleView() {
   }
 
   async function handleLogout() {
-    setIsDrawerOpen(false)
     if (isDirty && selectedId) await saveArticle()
     await logout()
     setSearchParams({})
   }
 
+  const drawerItems = [
+    { key: 'all', label: 'すべて', icon: <ListIcon /> },
+    { key: 'draft', label: '作成中', icon: <PenIcon /> },
+    { key: 'published', label: '投稿済み', icon: <CheckCircleIcon /> },
+    { key: 'trash', label: 'ゴミ箱', icon: <TrashIcon />, badge: trashedArticles.length },
+  ].map((item) => ({
+    ...item,
+    active: viewMode === item.key,
+    onSelect: () => handleViewMode(item.key as ViewMode),
+  }))
+
   return (
-    <div className="article-app">
-      {/* ドロワーオーバーレイ */}
-      <div
-        className={`drawer-overlay${isDrawerOpen ? ' open' : ''}`}
-        onClick={() => setIsDrawerOpen(false)}
-      />
-
-      {/* 左スライドドロワー */}
-      <aside
-        className={`drawer${isDrawerOpen ? ' open' : ''}`}
-        role="dialog"
-        aria-modal="true"
-        aria-hidden={!isDrawerOpen}
-      >
-        <div className="drawer-account">
-          <div className="drawer-avatar">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-          </div>
-          <span className="drawer-email">{userEmail}</span>
-        </div>
-        <div className="drawer-divider" />
-
-        {/* ビューモード切り替え */}
-        <button
-          className={`drawer-item${viewMode === 'all' ? ' drawer-item--active' : ''}`}
-          onClick={() => handleViewMode('all')}
-        >
-          <span className="drawer-item-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-              <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-            </svg>
-          </span>
-          <span>すべて</span>
-        </button>
-        <button
-          className={`drawer-item${viewMode === 'draft' ? ' drawer-item--active' : ''}`}
-          onClick={() => handleViewMode('draft')}
-        >
-          <span className="drawer-item-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-            </svg>
-          </span>
-          <span>作成中</span>
-        </button>
-        <button
-          className={`drawer-item${viewMode === 'published' ? ' drawer-item--active' : ''}`}
-          onClick={() => handleViewMode('published')}
-        >
-          <span className="drawer-item-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-              <polyline points="22 4 12 14.01 9 11.01"/>
-            </svg>
-          </span>
-          <span>投稿済み</span>
-        </button>
-        <button
-          className={`drawer-item${viewMode === 'trash' ? ' drawer-item--active' : ''}`}
-          onClick={() => handleViewMode('trash')}
-        >
-          <span className="drawer-item-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-              <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-            </svg>
-          </span>
-          <span>ゴミ箱</span>
-          {trashedArticles.length > 0 && (
-            <span className="trash-badge">{trashedArticles.length}</span>
-          )}
-        </button>
-
-        <div className="drawer-divider" />
-        <div className="drawer-bottom">
-          <button className="drawer-item" onClick={toggleTheme}>
-            <span className="drawer-item-icon">
-              {isDark ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-                </svg>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="5"/>
-                  <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                  <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-                </svg>
-              )}
-            </span>
-            <span>{isDark ? 'ダークモード' : 'ライトモード'}</span>
-          </button>
-          <div className="drawer-divider" />
-          <button className="drawer-item drawer-item--logout" onClick={handleLogout}>
-            <span className="drawer-item-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
-              </svg>
-            </span>
-            <span>ログアウト</span>
-          </button>
-        </div>
-      </aside>
-
+    <div className="split-app">
       {/* サイドバー（記事一覧） */}
-      <div className={`article-sidebar${isMobile && showEditor ? ' mobile-hidden' : ''}`}>
-        <div className="sidebar-header">
-          <button
-            className={`btn-hamburger${isDrawerOpen ? ' open' : ''}`}
-            onClick={() => setIsDrawerOpen((v) => !v)}
-            aria-label="メニューを開く"
-          >
-            <span className="bar" /><span className="bar" /><span className="bar" />
-          </button>
-          <span className="sidebar-title">Markdown Editer</span>
-          {viewMode !== 'trash' ? (
-            <button className="btn-compose" onClick={handleCreate} aria-label="新規作成">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 20h9"/>
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-              </svg>
-            </button>
-          ) : trashedArticles.length > 0 ? (
-            <button
-              className="btn-compose btn-empty-trash"
-              onClick={handleEmptyTrash}
-              aria-label="ゴミ箱を空にする"
-              title="ゴミ箱を空にする"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6"/>
-                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-              </svg>
-            </button>
-          ) : (
-            <div style={{ width: '36px' }} />
-          )}
-        </div>
+      <div className={`split-sidebar${isMobile && showEditor ? ' mobile-hidden' : ''}`}>
+        <AppHeader
+          left={
+            <DrawerMenu
+              email={userEmail}
+              items={drawerItems}
+              isDark={isDark}
+              onToggleTheme={toggleTheme}
+              onLogout={handleLogout}
+            />
+          }
+          title={VIEW_TITLES[viewMode]}
+          right={viewMode !== 'trash' ? (
+            <IconButton label="新規作成" onClick={handleCreate}>
+              <ComposeIcon />
+            </IconButton>
+          ) : undefined}
+        />
 
-        {/* 記事一覧（ゴミ箱以外） */}
         {viewMode !== 'trash' ? (
           <>
-            <div className="search-bar-wrap">
-              <div className="search-bar">
-                <svg className="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8"/>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-                <input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  type="search"
-                  className="search-input"
-                  placeholder="記事を検索"
-                />
-              </div>
-            </div>
-
-            {/* 記事リスト */}
-            <div className="article-list">
-              {filteredArticles.length === 0 && (
-                <div className="empty-state">
-                  <p>記事がありません</p>
-                  <p className="empty-hint">右上のボタンで記事を追加しましょう</p>
-                </div>
+            <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="記事を検索" />
+            <div className="list-scroll">
+              {filteredArticles.length === 0 ? (
+                searchQuery.trim()
+                  ? <EmptyState message="一致する記事がありません" />
+                  : <EmptyState message="記事がありません" hint="右上のボタンで記事を追加しましょう" />
+              ) : (
+                <SwipeableList>
+                  {filteredArticles.map((article) => (
+                    <ArticleListItem
+                      key={article.id}
+                      article={article}
+                      active={selectedId === article.id}
+                      onSelect={handleSelect}
+                      onTrash={handleListTrash}
+                    />
+                  ))}
+                </SwipeableList>
               )}
-              {filteredArticles.map((article) => (
-                <ArticleListItem
-                  key={article.id}
-                  article={article}
-                  active={selectedId === article.id}
-                  isOpen={openSwipeId === article.id}
-                  suppressClickRef={suppressClickRef}
-                  onSelect={handleSelect}
-                  onTrash={handleListTrash}
-                  onOpen={setOpenSwipeId}
-                />
-              ))}
             </div>
           </>
         ) : (
           /* ゴミ箱 */
-          <div className="article-list">
-            {trashedArticles.length === 0 && (
-              <div className="empty-state">
-                <p>ゴミ箱は空です</p>
-              </div>
-            )}
-            {trashedArticles.map((article) => (
-              <div key={article.id} className="article-item article-item--trash">
-                <div className="article-item-inner">
-                  <h2 className="article-title">{article.title || '無題の記事'}</h2>
-                  <p className="article-preview">{previewText(article.content)}</p>
-                  <time className="article-date">削除日: {formatDate(article.deletedAt!)}</time>
-                  <div className="trash-actions">
-                    <button className="trash-btn trash-btn--restore" onClick={() => handleRestore(article.id)}>
-                      復元
-                    </button>
-                    <button className="trash-btn trash-btn--delete" onClick={() => handlePermanentDelete(article.id)}>
-                      完全削除
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <>
+            <TrashToolbar count={trashedArticles.length} onEmpty={handleEmptyTrash} />
+            <div className="list-scroll">
+              {trashedArticles.length === 0 ? (
+                <EmptyState message="ゴミ箱は空です" icon={<TrashIcon size={40} />} />
+              ) : (
+                trashedArticles.map((article) => (
+                  <TrashListItem
+                    key={article.id}
+                    title={article.title}
+                    content={article.content}
+                    deletedAt={article.deletedAt!}
+                    untitledLabel="無題の記事"
+                    onRestore={() => articlesStore.restore(article.id)}
+                    onDelete={() => handlePermanentDelete(article.id)}
+                  />
+                ))
+              )}
+            </div>
+          </>
         )}
       </div>
 
       {/* メインエリア（エディタ） */}
-      <div className={`article-main${isMobile && !showEditor ? ' mobile-hidden' : ''}`}>
-        <div className="editor-nav">
-          {isMobile ? (
-            <button className="btn-back" onClick={handleBack}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <polyline points="15 18 9 12 15 6"/>
-              </svg>
-              <span>記事一覧</span>
-            </button>
-          ) : (
-            <div className="nav-spacer" />
+      <div className={`split-main${isMobile && !showEditor ? ' mobile-hidden' : ''}`}>
+        <EditorNav showBack={isMobile} backLabel="記事一覧" onBack={handleBack}>
+          {selectedId && (
+            <>
+              <SaveStatus isDirty={isDirty} />
+              <IconButton label={isPreview ? '編集に戻る' : 'プレビュー'} onClick={togglePreview}>
+                <EyeIcon off={isPreview} />
+              </IconButton>
+              <Popover label="その他" icon={<MoreIcon />} open={menuOpen} onOpenChange={setMenuOpen}>
+                <MenuItem icon={<SaveIcon />} onClick={onMenuSave}>保存</MenuItem>
+                <MenuDivider />
+                <MenuItem icon={<CheckCircleIcon size={16} />} onClick={onMenuToggleStatus}>
+                  {currentArticleStatus === 'published' ? '作成中に戻す' : '投稿済みにする'}
+                </MenuItem>
+                <MenuDivider />
+                <MenuItem icon={<TrashIcon size={16} />} onClick={onMenuTrash} danger>
+                  ゴミ箱に移動
+                </MenuItem>
+              </Popover>
+            </>
           )}
-
-          <div className="nav-actions">
-            {isDirty ? (
-              <span className="editing-label">編集中</span>
-            ) : selectedId ? (
-              <span className="saved-label">保存済み</span>
-            ) : null}
-
-            {/* プレビュー切り替えボタン */}
-            {selectedId && (
-              <button className="nav-icon-btn" onClick={togglePreview} title={isPreview ? '編集に戻る' : 'プレビュー'}>
-                {!isPreview ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                  </svg>
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                    <line x1="1" y1="1" x2="23" y2="23"/>
-                  </svg>
-                )}
-              </button>
-            )}
-
-            {/* メニュー */}
-            {selectedId && (
-              <div className="nav-icon-wrap">
-                <button
-                  className="nav-icon-btn"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setMenuOpen((v) => !v)
-                  }}
-                  title="その他"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <circle cx="12" cy="12" r="10"/>
-                    <circle cx="7.5" cy="12" r="1.1" fill="currentColor" stroke="none"/>
-                    <circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/>
-                    <circle cx="16.5" cy="12" r="1.1" fill="currentColor" stroke="none"/>
-                  </svg>
-                </button>
-                {menuOpen && (
-                  <div className="action-menu" onClick={(e) => e.stopPropagation()}>
-                    <button className="action-menu-item" onClick={onMenuSave}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                        <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
-                      </svg>
-                      保存
-                    </button>
-                    <div className="action-menu-divider" />
-                    <button className="action-menu-item" onClick={onMenuToggleStatus}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                        <polyline points="22 4 12 14.01 9 11.01"/>
-                      </svg>
-                      {currentArticleStatus === 'published' ? '作成中に戻す' : '投稿済みにする'}
-                    </button>
-                    <div className="action-menu-divider" />
-                    <button className="action-menu-item action-menu-delete" onClick={onMenuTrash}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6"/>
-                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                        <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-                      </svg>
-                      ゴミ箱に移動
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
+          <IconButton label="新規作成" onClick={handleCreate}>
+            <ComposeIcon />
+          </IconButton>
+        </EditorNav>
 
         {/* エディタ本体 */}
         {!selectedId ? (
-          <div className="no-selection">
-            <div className="no-selection-content">
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
-              </svg>
-              <p>記事を選択してください</p>
-            </div>
-          </div>
+          <NoSelection message="記事を選択してください" />
         ) : (
           <div className="editor-scroll" ref={editorScrollRef}>
             <textarea
@@ -676,23 +429,21 @@ export default function ArticleView() {
               value={title}
               onChange={onTitleInput}
               onKeyDown={onTitleKeyDown}
-              className="title-input"
+              className="editor-title"
               placeholder="記事タイトル"
               rows={1}
               readOnly={isPreview}
             />
             {!isPreview ? (
-              <div className="editor-pane">
-                <textarea
-                  ref={textareaRef}
-                  value={content}
-                  onChange={onContentInput}
-                  onKeyDown={onContentKeyDown}
-                  className="markdown-input"
-                  placeholder="Markdown で書いてください..."
-                  spellCheck={false}
-                />
-              </div>
+              <textarea
+                ref={textareaRef}
+                value={content}
+                onChange={onContentInput}
+                onKeyDown={onBodyKeyDown}
+                className="editor-body markdown-input"
+                placeholder="Markdown で書いてください..."
+                spellCheck={false}
+              />
             ) : (
               <div
                 className="preview-pane markdown-body"

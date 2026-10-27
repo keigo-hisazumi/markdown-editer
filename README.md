@@ -74,10 +74,10 @@ src/
   App.tsx           認証状態の監視とスプラッシュ画面の表示
   firebase.ts       Firebase（Authentication / Firestore）の初期化
   views/            画面（ログイン / 新規登録・記事の一覧と編集）
-  components/       スプラッシュ画面、記事一覧の項目
+  components/       記事一覧の項目
   stores/           Zustand のストア（認証・記事・テーマ）
   lib/              端末への保存と、端末とサーバーの記事のマージ
-  assets/           スタイル
+  shared/           memo-list と同一内容を保つ共通実装（見た目・テーマ・共通部品）
 public/             favicon と PWA 用アイコン
 firestore.rules     Firestore のセキュリティルール
 vite.config.ts      Vite と PWA の設定

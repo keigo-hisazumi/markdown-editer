@@ -3,7 +3,7 @@ import { Route, Routes } from 'react-router-dom'
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth'
 import { auth } from './firebase'
 import { useAuthStore } from './stores/auth'
-import SplashScreen from './components/SplashScreen'
+import SplashScreen from './shared/components/SplashScreen'
 import AppView from './views/AppView'
 
 function toUser(firebaseUser: FirebaseUser | null) {
@@ -26,7 +26,7 @@ export default function App() {
   }, [])
 
   // 認証状態の確認が終わるまではスプラッシュ画面を表示する
-  if (!isAuthReady) return <SplashScreen />
+  if (!isAuthReady) return <SplashScreen appName="Markdown Editor" />
 
   return (
     <Routes>

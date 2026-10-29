@@ -13,6 +13,7 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "dompurify": "^3.4.17",
     "firebase": "^13.1.0",
     "marked": "^18.1.1",
     "react": "^19.3.1",

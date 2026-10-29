@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { marked } from 'marked'
 import { useArticlesStore } from '@/stores/articles'
 import type { ArticleStatus } from '@/stores/articles'
 import { useAuthStore } from '@/stores/auth'
@@ -25,6 +24,7 @@ import { useIsMobile } from '@/shared/hooks/useIsMobile'
 import { useTitleBodyKeys } from '@/shared/hooks/useTitleBodyKeys'
 import { useVisualViewport } from '@/shared/hooks/useVisualViewport'
 import { confirmEmptyTrash, confirmPermanentDelete } from '@/shared/lib/confirm'
+import { renderMarkdown } from '@/lib/renderMarkdown'
 import './ArticleView.css'
 
 type ViewMode = 'all' | 'draft' | 'published' | 'trash'
@@ -145,7 +145,7 @@ export default function ArticleView() {
   }, [articles, viewMode, searchQuery])
 
   const renderedContent = useMemo(
-    () => marked.parse(content, { async: false }),
+    () => renderMarkdown(content),
     [content],
   )
 

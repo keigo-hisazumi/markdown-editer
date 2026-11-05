@@ -1,6 +1,6 @@
 # markdown-editer
 
-Markdown 形式で記事を書き、プレビューしながら編集できるブラウザベースのエディター「Markdown Editor」です。記事は Firebase に保存して端末間で同期し、PWA としてスマートフォンにも対応しています。
+Markdown で記事を書き、プレビューしながら編集できるエディター「Markdown Editor」です。
 
 **公開 URL**: <https://keigo-hisazumi.github.io/markdown-editer/>
 

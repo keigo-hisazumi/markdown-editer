@@ -10,7 +10,10 @@
     "build-only": "vite build",
     "type-check": "tsc --build",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "icons": "pwa-assets-generator",
+    "prebuild": "npm run icons",
+    "predev": "npm run icons"
   },
   "dependencies": {
     "dompurify": "^3.4.17",
@@ -28,6 +31,7 @@
     "@types/node": "^26.6.6",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.3.0",
+    "@vite-pwa/assets-generator": "^2.0.0",
     "@vitejs/plugin-react": "^6.3.0",
     "eslint": "^10.14.0",
     "eslint-plugin-react-hooks": "^7.1.1",

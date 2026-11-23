@@ -16,7 +16,7 @@
     "predev": "npm run icons"
   },
   "dependencies": {
-    "dompurify": "^3.4.17",
+    "dompurify": "^3.4.18",
     "firebase": "^13.4.0",
     "marked": "^18.2.1",
     "react": "^19.3.1",
